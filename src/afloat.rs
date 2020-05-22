@@ -257,7 +257,7 @@ macro_rules! float_passthrough {
         fn $method(self) -> $type {
             self.v.$method()
         }
-    }
+    };
 }
 
 macro_rules! float_unsupported {
@@ -273,7 +273,7 @@ macro_rules! float_elemental {
         fn $method(self) -> Self {
             Self::from_op(OpCode::$opcode, self, None)
         }
-    }
+    };
 }
 
 macro_rules! float_elemental2 {
@@ -281,8 +281,7 @@ macro_rules! float_elemental2 {
         fn $method(self, other: Self) -> Self {
             Self::from_op(OpCode::$opcode, self, Some(other))
         }
-    }
-
+    };
 }
 
 impl<S: Float> Float for AFloat<S> {
