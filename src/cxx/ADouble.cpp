@@ -10,54 +10,54 @@ namespace adv
 struct ADouble::Impl
 {
 public:
-	adv_double* val;
+	adv_adouble* val;
 };
 
 ADouble::~ADouble()
 {
-	::adv_double_free(m_impl->val);
+	::adv_adouble_free(m_impl->val);
 	delete m_impl;
 }
 
 ADouble::ADouble(void* impl):
 	m_impl(new Impl)
 {
-	m_impl->val = reinterpret_cast<adv_double*>(impl);
+	m_impl->val = reinterpret_cast<adv_adouble*>(impl);
 }
 
 ADouble::ADouble():
-	ADouble(::adv_double_default())
+	ADouble(::adv_adouble_default())
 {
 }
 
 ADouble::ADouble(double val):
-	ADouble(::adv_double_from_value(val))
+	ADouble(::adv_adouble_from_value(val))
 {
 }
 
 ADouble::ADouble(const ADouble& other):
-	ADouble(::adv_double_copy(other.m_impl->val))
+	ADouble(::adv_adouble_copy(other.m_impl->val))
 {
 }
 
 ADouble::ADouble(ADouble&& other):
 	ADouble(other.m_impl->val)
 {
-	other.m_impl->val = ::adv_double_default();
+	other.m_impl->val = ::adv_adouble_default();
 }
 
 ADouble& ADouble::operator=(ADouble&& other)
 {
-	::adv_double_free(m_impl->val);
+	::adv_adouble_free(m_impl->val);
 	m_impl->val = other.m_impl->val;
-	other.m_impl->val = ::adv_double_default();
+	other.m_impl->val = ::adv_adouble_default();
 	return *this;
 }
 
 ADouble& ADouble::operator=(const ADouble& other)
 {
-	::adv_double_free(m_impl->val);
-	m_impl->val = ::adv_double_copy(other.m_impl->val);
+	::adv_adouble_free(m_impl->val);
+	m_impl->val = ::adv_adouble_copy(other.m_impl->val);
 	return *this;
 }
 
@@ -69,7 +69,7 @@ const void* ADouble::get_impl() const
 #define BINARY_OP_IMPL(NAME, OP) \
 	ADouble ADouble::operator OP(const ADouble& rhs) const \
 	{ \
-		::adv_double* result_impl; \
+		::adv_adouble* result_impl; \
 		::adv_op_##NAME(m_impl->val, rhs.m_impl->val, &result_impl); \
 		return ADouble(result_impl); \
 	} \
@@ -87,7 +87,7 @@ BINARY_OP_IMPL(div, /)
 
 #define UNARY_FUNC_IMPL(NAME, STDNAME) \
 	ADouble NAME(const ADouble& val) { \
-		::adv_double* ptr; \
+		::adv_adouble* ptr; \
 		::adv_##NAME(val.m_impl->val, &ptr); \
 		return ADouble(ptr); \
 	} \
@@ -106,7 +106,7 @@ UNARY_FUNC_IMPL(ln, log)
 
 #define BINARY_FUNC_IMPL(NAME) \
 	ADouble NAME(const ADouble& lhs, const ADouble& rhs) { \
-		::adv_double* ptr; \
+		::adv_adouble* ptr; \
 		::adv_##NAME(lhs.m_impl->val, rhs.m_impl->val, &ptr); \
 		return ADouble(ptr); \
 	}

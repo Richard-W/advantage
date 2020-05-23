@@ -5,44 +5,44 @@ use num::Zero;
 // `AContext` bindings
 
 #[no_mangle]
-pub extern "C" fn adv_context_new() -> *mut AContext {
+pub extern "C" fn adv_acontext_new() -> *mut AContext {
     Box::leak(Box::new(AContext::new()))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn adv_context_free(this: *mut AContext) {
+pub unsafe extern "C" fn adv_acontext_free(this: *mut AContext) {
     Box::from_raw(this);
 }
 
 #[no_mangle]
-pub extern "C" fn adv_context_new_independent(this: &'static mut AContext) -> *mut ADouble {
+pub extern "C" fn adv_acontext_new_independent(this: &'static mut AContext) -> *mut ADouble {
     Box::leak(Box::new(this.new_indep(0.0)))
 }
 
 #[no_mangle]
-pub extern "C" fn adv_context_set_dependent(this: &mut AContext, val: &ADouble) {
+pub extern "C" fn adv_acontext_set_dependent(this: &mut AContext, val: &ADouble) {
     this.set_dep(val);
 }
 
 // `ADouble` bindings
 
 #[no_mangle]
-pub unsafe extern "C" fn adv_double_default() -> *mut ADouble {
+pub unsafe extern "C" fn adv_adouble_default() -> *mut ADouble {
     Box::leak(Box::new(ADouble::zero()))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn adv_double_from_value(val: f64) -> *mut ADouble {
+pub unsafe extern "C" fn adv_adouble_from_value(val: f64) -> *mut ADouble {
     Box::leak(Box::new(ADouble::from(val)))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn adv_double_free(this: *mut ADouble) {
+pub unsafe extern "C" fn adv_adouble_free(this: *mut ADouble) {
     Box::from_raw(this);
 }
 
 #[no_mangle]
-pub extern "C" fn adv_double_copy(this: &ADouble) -> *mut ADouble {
+pub extern "C" fn adv_adouble_copy(this: &ADouble) -> *mut ADouble {
     Box::leak(Box::new(this.clone()))
 }
 

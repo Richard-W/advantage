@@ -19,13 +19,10 @@ num = "0.2"
 lazy_static = "1.4"
 static_assertions = "1.1"
 
-[build-dependencies]
-cbindgen = { version = "0.9", optional = true }
-
 [features]
 default = []
 
-ffi = ["cbindgen"]
+ffi = []
 
 [[example]]
 name = "perceptron"

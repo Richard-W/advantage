@@ -52,9 +52,6 @@ target_link_libraries(advantage PRIVATE
 	${CMAKE_DL_LIBS}
 	Threads::Threads
 )
-target_include_directories(advantage PRIVATE
-	${CARGO_TARGET_DIR}
-)
 target_include_directories(advantage PUBLIC
 	${PROJECT_SOURCE_DIR}/include
 )
