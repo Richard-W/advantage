@@ -147,38 +147,50 @@ mod tests {
     }
 
     macro_rules! unary_test_case {
-        ($func:ident, $dy:expr) => {{
+        ($func:ident, $start:expr, $end:expr, $num_tests:expr, $dy:expr) => {{
             const EPS: f64 = 1e-5;
 
-            let x = 0.5;
-            let tape = {
-                let mut ctx = AContext::new();
-                let mut x = AFloat::<f64>::new(x, 0.0);
-                ctx.set_indep(&mut x);
-                let y = x.$func();
-                ctx.set_dep(&y);
-                ctx.tape()
-            };
+            let num_tests: usize = $num_tests;
+            let start: f64 = $start;
+            let end: f64 = $end;
 
-            let dx = DVector::from_element(1, 1.0);
-            let dy = tape.first_order_forward(&dx);
-            assert!((dy[0] - ($dy)(x)).abs() < EPS);
+            let dx = (end - start) / (num_tests as f64);
+            for i in 0..num_tests {
+                let x = start + (i as f64) * dx;
+                println!("Test case {}({})", stringify!($func), x);
+                let tape = {
+                    let mut ctx = AContext::new();
+                    let mut x = AFloat::<f64>::new(x, 0.0);
+                    ctx.set_indep(&mut x);
+                    let y = x.$func();
+                    ctx.set_dep(&y);
+                    ctx.tape()
+                };
 
-            let ybar = DVector::from_element(1, 1.0);
-            let xbar = tape.first_order_reverse(&ybar);
-            assert!((xbar[0] - ($dy)(x)).abs() < EPS);
+                let dx = DVector::from_element(1, 1.0);
+                let dy = tape.first_order_forward(&dx);
+                assert!((dy[0] - ($dy)(x)).abs() < EPS);
+
+                let ybar = DVector::from_element(1, 1.0);
+                let xbar = tape.first_order_reverse(&ybar);
+                assert!((xbar[0] - ($dy)(x)).abs() < EPS);
+            }
         }};
+        ($func:ident, $dy:expr) => {
+            unary_test_case!($func, 0.0, 1.0, 10, $dy);
+        };
     }
 
     #[test]
     #[allow(clippy::redundant_closure_call)]
+    #[allow(clippy::cognitive_complexity)]
     fn first_order_unary_nonlinear_functions() {
         unary_test_case!(sin, |x: f64| x.cos());
         unary_test_case!(cos, |x: f64| -x.sin());
         unary_test_case!(tan, |x: f64| (1.0 / x.cos()).powi(2));
         unary_test_case!(exp, |x: f64| x.exp());
-        unary_test_case!(ln, |x: f64| 1.0 / x);
-        unary_test_case!(sqrt, |x: f64| 0.5 / x.sqrt());
+        unary_test_case!(ln, 0.1, 1.0, 9, |x: f64| 1.0 / x);
+        unary_test_case!(sqrt, 0.1, 1.0, 9, |x: f64| 0.5 / x.sqrt());
         unary_test_case!(asin, |x: f64| 1.0 / (1.0 - x.powi(2)).sqrt());
         unary_test_case!(acos, |x: f64| -1.0 / (1.0 - x.powi(2)).sqrt());
         unary_test_case!(atan, |x: f64| 1.0 / (1.0 + x.powi(2)));
