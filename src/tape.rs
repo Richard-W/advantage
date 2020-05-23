@@ -111,148 +111,76 @@ pub trait Tape: Send + Sync + fmt::Debug {
 mod tests {
     use super::*;
 
+    adv_fn! {
+        fn all_arithmetic_test_func(x: [[1]]) -> [[1]] {
+            let x = x[0];
+            let v1 = x + x - x * x / x;
+            let v2 = (v1 + 2.0 - 2.0) * 2.0 / 2.0;
+            let v3 = -(2.0 - (2.0 + v2));
+            let v4 = 2.0 / (2.0 * v3);
+            let v5 = 1.0 / v4;
+            DVector::from_vec(vec![v5])
+        }
+    }
+
     #[test]
     fn zero_order_arithmetic() {
-        adv_fn! {
-            fn arithmetic_test_function(x1: Scalar, x2: Scalar) -> Scalar {
-                let v1 = x1 + 2.0;
-                let v2 = x1 - 2.0;
-                let v3 = x1 * 2.0;
-                let v4 = x1 / 2.0;
-
-                let v5 = 2.0 + x2;
-                let v6 = 2.0 - x2;
-                let v7 = 2.0 * x2;
-                let v8 = 2.0 / x2;
-
-                let v9 = v1 + v5;
-                let v10 = v2 - v6;
-                let v11 = v3 * v7;
-                let v12 = v4 / v8;
-
-                v9 + v10 + v11 + v12
-            }
-        }
-
-        let mut tape = {
-            let mut ctx = AContext::new();
-            let x1 = ctx.new_indep(0.0);
-            let x2 = ctx.new_indep(0.0);
-            ctx.set_dep(&arithmetic_test_function(x1, x2));
-            ctx.tape()
-        };
-        tape.zero_order(&DVector::from_vec(vec![2.0, 3.0]));
-
-        let expected = arithmetic_test_function(2.0, 3.0);
+        let mut tape = adv_fn_obj!(all_arithmetic_test_func).tape(&DVector::zeros(1));
+        tape.zero_order(&DVector::from_vec(vec![3.0]));
         let actual = tape.y()[0];
+        let expected = all_arithmetic_test_func(DVector::from_vec(vec![3.0]))[0];
         assert!((actual - expected).abs() < std::f64::EPSILON);
     }
 
     #[test]
-    #[allow(clippy::let_and_return)]
     fn first_order_forward_arithmetic() {
-        adv_fn! {
-            fn test_function(x: Scalar) -> Scalar {
-                let v1 = x + x - x * x / x;
-                let v2 = (v1 + 2.0 - 2.0) * 2.0 / 2.0;
-                let v3 = -(2.0 - (2.0 + v2));
-                let v4 = 2.0 / (2.0 * v3);
-                let v5 = 1.0 / v4;
-                v5
-            }
-        }
-        let tape = {
-            let mut ctx = AContext::new();
-            let x = ctx.new_indep(3.0);
-            ctx.set_dep(&test_function(x));
-            ctx.tape()
-        };
+        let tape = adv_fn_obj!(all_arithmetic_test_func).tape(&DVector::from_element(1, 3.0));
         let dy = tape.first_order_forward(&DVector::from_element(1, 1.0));
         assert!((dy[0] - 1.0).abs() < std::f64::EPSILON);
     }
 
     #[test]
-    #[allow(clippy::let_and_return)]
     fn first_order_reverse_arithmetic() {
-        adv_fn! {
-            fn test_function(x: Scalar) -> Scalar {
-                let v1 = x + x - x * x / x;
-                let v2 = (v1 + 2.0 - 2.0) * 2.0 / 2.0;
-                let v3 = -(2.0 - (2.0 + v2));
-                let v4 = 2.0 / (2.0 * v3);
-                let v5 = 1.0 / v4;
-                v5
-            }
-        }
-        let tape = {
-            let mut ctx = AContext::new();
-            let x = ctx.new_indep(3.0);
-            ctx.set_dep(&test_function(x));
-            ctx.tape()
-        };
+        let tape = adv_fn_obj!(all_arithmetic_test_func).tape(&DVector::from_element(1, 3.0));
         let xbar = tape.first_order_reverse(&DVector::from_element(1, 1.0));
         assert!((xbar[0] - 1.0).abs() < std::f64::EPSILON);
     }
 
-    #[test]
-    #[allow(clippy::redundant_closure_call)]
-    fn first_order_forward_nonlinear_functions() {
-        const EPS: f64 = 1e-5;
-        macro_rules! test_case {
-            ($func:ident, $dy:expr) => {
-                let x = 0.5;
-                let tape = {
-                    let mut ctx = AContext::new();
-                    let mut x = AFloat::<f64>::new(x, 0.0);
-                    ctx.set_indep(&mut x);
-                    let y = x.$func();
-                    ctx.set_dep(&y);
-                    ctx.tape()
-                };
-                let dx = DVector::from_element(1, 1.0);
-                let dy = tape.first_order_forward(&dx);
-                assert!((dy[0] - ($dy)(x)).abs() < EPS);
+    macro_rules! unary_test_case {
+        ($func:ident, $dy:expr) => {{
+            const EPS: f64 = 1e-5;
+
+            let x = 0.5;
+            let tape = {
+                let mut ctx = AContext::new();
+                let mut x = AFloat::<f64>::new(x, 0.0);
+                ctx.set_indep(&mut x);
+                let y = x.$func();
+                ctx.set_dep(&y);
+                ctx.tape()
             };
-        }
-        test_case!(sin, |x: f64| x.cos());
-        test_case!(cos, |x: f64| -x.sin());
-        test_case!(tan, |x: f64| (1.0 / x.cos()).powi(2));
-        test_case!(exp, |x: f64| x.exp());
-        test_case!(ln, |x: f64| 1.0 / x);
-        test_case!(sqrt, |x: f64| 0.5 / x.sqrt());
-        test_case!(asin, |x: f64| 1.0 / (1.0 - x.powi(2)).sqrt());
-        test_case!(acos, |x: f64| -1.0 / (1.0 - x.powi(2)).sqrt());
-        test_case!(atan, |x: f64| 1.0 / (1.0 + x.powi(2)));
+
+            let dx = DVector::from_element(1, 1.0);
+            let dy = tape.first_order_forward(&dx);
+            assert!((dy[0] - ($dy)(x)).abs() < EPS);
+
+            let ybar = DVector::from_element(1, 1.0);
+            let xbar = tape.first_order_reverse(&ybar);
+            assert!((xbar[0] - ($dy)(x)).abs() < EPS);
+        }};
     }
 
     #[test]
     #[allow(clippy::redundant_closure_call)]
-    fn first_order_reverse_nonlinear_functions() {
-        const EPS: f64 = 1e-5;
-        macro_rules! test_case {
-            ($func:ident, $dy:expr) => {
-                let x = 0.5;
-                let tape = {
-                    let mut ctx = AContext::new();
-                    let mut x = AFloat::<f64>::new(x, 0.0);
-                    ctx.set_indep(&mut x);
-                    let y = x.$func();
-                    ctx.set_dep(&y);
-                    ctx.tape()
-                };
-                let ybar = DVector::from_element(1, 1.0);
-                let xbar = tape.first_order_reverse(&ybar);
-                assert!((xbar[0] - ($dy)(x)).abs() < EPS);
-            };
-        }
-        test_case!(sin, |x: f64| x.cos());
-        test_case!(cos, |x: f64| -x.sin());
-        test_case!(tan, |x: f64| (1.0 / x.cos()).powi(2));
-        test_case!(exp, |x: f64| x.exp());
-        test_case!(ln, |x: f64| 1.0 / x);
-        test_case!(sqrt, |x: f64| 0.5 / x.sqrt());
-        test_case!(asin, |x: f64| 1.0 / (1.0 - x.powi(2)).sqrt());
-        test_case!(acos, |x: f64| -1.0 / (1.0 - x.powi(2)).sqrt());
-        test_case!(atan, |x: f64| 1.0 / (1.0 + x.powi(2)));
+    fn first_order_unary_nonlinear_functions() {
+        unary_test_case!(sin, |x: f64| x.cos());
+        unary_test_case!(cos, |x: f64| -x.sin());
+        unary_test_case!(tan, |x: f64| (1.0 / x.cos()).powi(2));
+        unary_test_case!(exp, |x: f64| x.exp());
+        unary_test_case!(ln, |x: f64| 1.0 / x);
+        unary_test_case!(sqrt, |x: f64| 0.5 / x.sqrt());
+        unary_test_case!(asin, |x: f64| 1.0 / (1.0 - x.powi(2)).sqrt());
+        unary_test_case!(acos, |x: f64| -1.0 / (1.0 - x.powi(2)).sqrt());
+        unary_test_case!(atan, |x: f64| 1.0 / (1.0 + x.powi(2)));
     }
 }
