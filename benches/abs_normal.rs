@@ -4,15 +4,15 @@ extern crate advantage as adv;
 extern crate test;
 
 use adv::prelude::*;
+use adv::Float;
 use test::Bencher;
 
-adv_fn! {
-    fn test_function(input: Vec<Scalar>) -> Scalar {
-        input.iter()
-            .map(|x| x.max(Scalar::zero()))
-            .map(|x| x.min(Scalar::one()))
-            .fold(Scalar::zero(), |a, b| a.max(b))
-    }
+fn test_function<T: Float>(input: Vec<T>) -> T {
+    input
+        .iter()
+        .map(|x| x.max(T::zero()))
+        .map(|x| x.min(T::one()))
+        .fold(T::zero(), |a, b| a.max(b))
 }
 
 fn test_function_tape() -> impl adv::Tape {
