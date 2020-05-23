@@ -112,6 +112,7 @@ mod tests {
     use super::*;
 
     adv_fn! {
+        /// Function using all arithmetic operations
         fn all_arithmetic_test_func(x: [[1]]) -> [[1]] {
             let x = x[0];
             let v1 = x + x - x * x / x;
@@ -123,6 +124,7 @@ mod tests {
         }
     }
 
+    /// `all_arithmetic_test_func` can be replayed from tape with different inputs
     #[test]
     fn zero_order_arithmetic() {
         let mut tape = adv_fn_obj!(all_arithmetic_test_func).tape(&DVector::zeros(1));
@@ -132,6 +134,7 @@ mod tests {
         assert!((actual - expected).abs() < std::f64::EPSILON);
     }
 
+    /// Forward-mode AD works on `all_arithmetic_test_func`
     #[test]
     fn first_order_forward_arithmetic() {
         let tape = adv_fn_obj!(all_arithmetic_test_func).tape(&DVector::from_element(1, 3.0));
@@ -139,6 +142,7 @@ mod tests {
         assert!((dy[0] - 1.0).abs() < std::f64::EPSILON);
     }
 
+    /// Reverse-mode AD works on `all_arithmetic_test_func`
     #[test]
     fn first_order_reverse_arithmetic() {
         let tape = adv_fn_obj!(all_arithmetic_test_func).tape(&DVector::from_element(1, 3.0));
@@ -146,6 +150,7 @@ mod tests {
         assert!((xbar[0] - 1.0).abs() < std::f64::EPSILON);
     }
 
+    /// Test forward-mode and reverse-mode on a single unary function
     macro_rules! unary_test_case {
         ($func:ident, $start:expr, $end:expr, $num_tests:expr, $dy:expr) => {{
             const EPS: f64 = 1e-5;
@@ -181,6 +186,7 @@ mod tests {
         };
     }
 
+    /// Forward-mode and reverse-mode work on nonlinear unary functions
     #[test]
     #[allow(clippy::redundant_closure_call)]
     #[allow(clippy::cognitive_complexity)]
