@@ -27,8 +27,8 @@ ExternalProject_add(advantage_rust
 	BUILD_IN_SOURCE TRUE
 	BUILD_ALWAYS TRUE
 	CONFIGURE_COMMAND ""
-	BUILD_COMMAND CARGO_TARGET_DIR=${CARGO_TARGET_DIR} cargo +nightly build ${cargo_flags}
-	TEST_COMMAND CARGO_TARGET_DIR=${CARGO_TARGET_DIR} cargo +nightly test ${cargo_flags}
+	BUILD_COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} cargo build ${cargo_flags}
+	TEST_COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} cargo test ${cargo_flags}
 	INSTALL_COMMAND ""
 )
 
@@ -52,7 +52,17 @@ target_include_directories(advantage PUBLIC
 if (BUILD_TESTS)
 	enable_testing()
 	find_package(GTest REQUIRED)
-	add_subdirectory(tests)
+	macro(adv_test name)
+		add_executable(${name} tests/cxx/${name}.cpp)
+		target_link_libraries(${name}
+			advantage
+			GTest::GTest
+			GTest::Main
+			)
+		gtest_discover_tests(${name})
+	endmacro()
+	adv_test(AContextTests)
+	adv_test(ADoubleTests)
 endif ()
 
 if (DOXYGEN_FOUND)
