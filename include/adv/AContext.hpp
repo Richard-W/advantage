@@ -1,12 +1,13 @@
 #ifndef _ADV_CONTEXT_HPP
 #define _ADV_CONTEXT_HPP
 
+#include "export.hpp"
 #include "ADouble.hpp"
 
 namespace adv
 {
 
-class AContext
+class ADV_EXPORT AContext
 {
 public:
 	/// \brief Destructor

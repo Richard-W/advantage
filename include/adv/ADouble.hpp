@@ -1,10 +1,12 @@
 #ifndef _ADV_DOUBLE_HPP
 #define _ADV_DOUBLE_HPP
 
+#include "export.hpp"
+
 namespace adv
 {
 
-class ADouble
+class ADV_EXPORT ADouble
 {
 public:
 	/// \brief Destructor
@@ -39,46 +41,46 @@ private:
 
 	friend class AContext;
 
-	friend ADouble operator+(double, const ADouble&);
-	friend ADouble operator-(double, const ADouble&);
-	friend ADouble operator*(double, const ADouble&);
-	friend ADouble operator/(double, const ADouble&);
+	friend ADV_EXPORT ADouble operator+(double, const ADouble&);
+	friend ADV_EXPORT ADouble operator-(double, const ADouble&);
+	friend ADV_EXPORT ADouble operator*(double, const ADouble&);
+	friend ADV_EXPORT ADouble operator/(double, const ADouble&);
 
-	friend ADouble sin(const ADouble&);
-	friend ADouble cos(const ADouble&);
-	friend ADouble tan(const ADouble&);
-	friend ADouble abs(const ADouble&);
-	friend ADouble exp(const ADouble&);
-	friend ADouble ln(const ADouble&);
+	friend ADV_EXPORT ADouble sin(const ADouble&);
+	friend ADV_EXPORT ADouble cos(const ADouble&);
+	friend ADV_EXPORT ADouble tan(const ADouble&);
+	friend ADV_EXPORT ADouble abs(const ADouble&);
+	friend ADV_EXPORT ADouble exp(const ADouble&);
+	friend ADV_EXPORT ADouble ln(const ADouble&);
 
-	friend ADouble min(const ADouble&, const ADouble&);
-	friend ADouble max(const ADouble&, const ADouble&);
+	friend ADV_EXPORT ADouble min(const ADouble&, const ADouble&);
+	friend ADV_EXPORT ADouble max(const ADouble&, const ADouble&);
 };
 
-ADouble operator+(double, const ADouble&);
-ADouble operator-(double, const ADouble&);
-ADouble operator*(double, const ADouble&);
-ADouble operator/(double, const ADouble&);
+ADV_EXPORT ADouble operator+(double, const ADouble&);
+ADV_EXPORT ADouble operator-(double, const ADouble&);
+ADV_EXPORT ADouble operator*(double, const ADouble&);
+ADV_EXPORT ADouble operator/(double, const ADouble&);
 
-ADouble sin(const ADouble&);
-ADouble cos(const ADouble&);
-ADouble tan(const ADouble&);
-ADouble abs(const ADouble&);
-ADouble exp(const ADouble&);
-ADouble ln(const ADouble&);
+ADV_EXPORT ADouble sin(const ADouble&);
+ADV_EXPORT ADouble cos(const ADouble&);
+ADV_EXPORT ADouble tan(const ADouble&);
+ADV_EXPORT ADouble abs(const ADouble&);
+ADV_EXPORT ADouble exp(const ADouble&);
+ADV_EXPORT ADouble ln(const ADouble&);
 
-double sin(double);
-double cos(double);
-double tan(double);
-double abs(double);
-double exp(double);
-double ln(double);
+ADV_EXPORT double sin(double);
+ADV_EXPORT double cos(double);
+ADV_EXPORT double tan(double);
+ADV_EXPORT double abs(double);
+ADV_EXPORT double exp(double);
+ADV_EXPORT double ln(double);
 
-ADouble min(const ADouble&, const ADouble&);
-ADouble max(const ADouble&, const ADouble&);
+ADV_EXPORT ADouble min(const ADouble&, const ADouble&);
+ADV_EXPORT ADouble max(const ADouble&, const ADouble&);
 
-double min(double, double);
-double max(double, double);
+ADV_EXPORT double min(double, double);
+ADV_EXPORT double max(double, double);
 
 } // namespace adv
 

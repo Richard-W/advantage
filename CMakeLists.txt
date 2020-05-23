@@ -10,16 +10,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 find_package(Threads REQUIRED)
 find_package(Doxygen)
 
-# Move cargo target directory to build dir
-set(CARGO_TARGET_DIR ${PROJECT_BINARY_DIR}/target)
-
-set(cargo_flags --features ffi)
-if (CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(cargo_library_path ${CARGO_TARGET_DIR}/debug/libadvantage.a)
-else ()
-	set(cargo_flags ${cargo_flags} --release)
-	set(cargo_library_path ${CARGO_TARGET_DIR}/release/libadvantage.a)
-endif ()
+set(cargo_target_dir ${PROJECT_BINARY_DIR}/target)
+# FIXME: The second "--features" flag is a noop. cargo does not accept an empty string as an argument.
+set(cargo_flags --features ffi $<IF:$<NOT:$<CONFIG:Debug>>,--release,--features>)
+set(cargo_library_dir ${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>)
 
 include(ExternalProject)
 ExternalProject_add(advantage_rust
@@ -27,8 +21,8 @@ ExternalProject_add(advantage_rust
 	BUILD_IN_SOURCE TRUE
 	BUILD_ALWAYS TRUE
 	CONFIGURE_COMMAND ""
-	BUILD_COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} cargo build ${cargo_flags}
-	TEST_COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} cargo test ${cargo_flags}
+	BUILD_COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${cargo_target_dir} cargo build ${cargo_flags}
+	TEST_COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${cargo_target_dir} cargo test ${cargo_flags}
 	INSTALL_COMMAND ""
 )
 if (BUILD_TESTS)
@@ -42,19 +36,39 @@ if (BUILD_TESTS)
 	)
 endif ()
 
-add_library(advantage SHARED
+add_library(advantage_cxx SHARED
+	include/adv.hpp
+	include/adv/AContext.hpp
+	include/adv/ADouble.hpp
+	include/adv/export.hpp
 	src/cxx/AContext.cpp
 	src/cxx/ADouble.cpp
 )
-add_dependencies(advantage advantage_rust)
-target_link_libraries(advantage PRIVATE
-	${cargo_library_path}
+add_dependencies(advantage_cxx advantage_rust)
+target_link_directories(advantage_cxx PRIVATE
+	${cargo_library_dir}
+)
+set_target_properties(advantage_cxx PROPERTIES
+	OUTPUT_NAME advantage
+)
+target_link_libraries(advantage_cxx PRIVATE
+	advantage
 	${CMAKE_DL_LIBS}
 	Threads::Threads
 )
-target_include_directories(advantage PUBLIC
+target_include_directories(advantage_cxx PUBLIC
 	${PROJECT_SOURCE_DIR}/include
 )
+target_compile_definitions(advantage_cxx PRIVATE
+	_IN_ADV
+)
+if (WIN32)
+	# FIXME: These symbols should not be needed here
+	target_link_libraries(advantage_cxx PRIVATE
+		ws2_32
+		userenv
+	)
+endif ()
 
 if (BUILD_TESTS)
 	enable_testing()
@@ -69,7 +83,7 @@ if (BUILD_TESTS)
 			${PROJECT_BINARY_DIR}/gtest/include
 		)
 		target_link_libraries(${name}
-			advantage
+			advantage_cxx
 			Threads::Threads
 			gtest$<$<CONFIG:Debug>:d>
 			gtest_main$<$<CONFIG:Debug>:d>
