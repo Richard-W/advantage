@@ -32,21 +32,6 @@ macro_rules! adv_fn {
             }
         }
     };
-    {
-        $(#[$attr:meta])*
-        $vis:vis fn $func_name:ident ( $($arg_name:ident : $arg_type:ty $(,)?)* ) $(-> $return_type:ty)? {
-            $($tt:tt)*
-        }
-    } => {
-        $(#[$attr])*
-        $vis fn $func_name<Scalar> ( $($arg_name : $arg_type ),* ) $(-> $return_type)?
-        where
-            Scalar: core::fmt::Debug + $crate::Scalar<f64>,
-            f64: $crate::Arithmetic<Scalar, Scalar>,
-        {
-            $($tt)*
-        }
-    };
 }
 
 /// Get the associated metadata for a function defined with `adv_fn!`

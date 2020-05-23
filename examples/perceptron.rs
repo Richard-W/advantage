@@ -1,76 +1,71 @@
 extern crate advantage as adv;
 
-use adv::adv_fn;
 use adv::prelude::*;
+use adv::Float;
 
-adv_fn! {
-    /// Sigmoid function
-    fn sigmoid(x: Scalar) -> Scalar {
-        let x_exp = x.exp();
-        x_exp / (x_exp + 1.0)
-    }
+/// Sigmoid function
+fn sigmoid<T: Float>(x: T) -> T {
+    let x_exp = x.exp();
+    x_exp / (x_exp + T::one())
 }
 
-adv_fn! {
-    /// A simple multilayer perceptron with 2 input neuron, 2 hidden neurons and 1 output neuron
-    fn multilayer_perceptron(
-        inputs: &[f64],
-        weights1: &[Scalar],
-        biases1: &[Scalar],
-        weights2: &[Scalar],
-        biases2: &[Scalar],
-    ) -> Scalar
-    {
-        assert_eq!(inputs.len(), 2);
-        assert_eq!(weights1.len(), 4);
-        assert_eq!(biases1.len(), 2);
-        assert_eq!(weights2.len(), 2);
-        assert_eq!(biases2.len(), 1);
+/// A simple multilayer perceptron with 2 input neuron, 2 hidden neurons and 1 output neuron
+fn multilayer_perceptron<T: Float>(
+    inputs: &[f64],
+    weights1: &[T],
+    biases1: &[T],
+    weights2: &[T],
+    biases2: &[T],
+) -> T {
+    assert_eq!(inputs.len(), 2);
+    assert_eq!(weights1.len(), 4);
+    assert_eq!(biases1.len(), 2);
+    assert_eq!(weights2.len(), 2);
+    assert_eq!(biases2.len(), 1);
 
-        let hidden1 = sigmoid(inputs[0] * weights1[0] + inputs[1] * weights1[1] + biases1[0]);
-        let hidden2 = sigmoid(inputs[0] * weights1[2] + inputs[1] * weights1[3] + biases1[1]);
-        sigmoid(hidden1 * weights2[0] + hidden2 * weights2[1] + biases2[0])
-    }
+    let input0 = T::from(inputs[0]).unwrap();
+    let input1 = T::from(inputs[1]).unwrap();
+    let hidden1 = sigmoid(input0 * weights1[0] + input1 * weights1[1] + biases1[0]);
+    let hidden2 = sigmoid(input0 * weights1[2] + input1 * weights1[3] + biases1[1]);
+    sigmoid(hidden1 * weights2[0] + hidden2 * weights2[1] + biases2[0])
 }
 
-adv_fn! {
-    /// Sum of square differences between the network and a xor-gate
-    fn xor_error(weights1: &[Scalar], biases1: &[Scalar], weights2: &[Scalar], biases2: &[Scalar]) -> Scalar {
-        assert_eq!(weights1.len(), 4);
-        assert_eq!(biases1.len(), 2);
-        assert_eq!(weights2.len(), 2);
-        assert_eq!(biases2.len(), 1);
+/// Sum of square differences between the network and a xor-gate
+fn xor_error<T: Float>(weights1: &[T], biases1: &[T], weights2: &[T], biases2: &[T]) -> T {
+    assert_eq!(weights1.len(), 4);
+    assert_eq!(biases1.len(), 2);
+    assert_eq!(weights2.len(), 2);
+    assert_eq!(biases2.len(), 1);
 
-        let error1 = {
-            let input = [0.0, 0.0];
-            let expected = 0.0;
-            let actual = multilayer_perceptron(&input, weights1, biases1, weights2, biases2);
-            (actual - expected) * (actual - expected)
-        };
+    let error1 = {
+        let input = [0.0, 0.0];
+        let expected = T::zero();
+        let actual = multilayer_perceptron(&input, weights1, biases1, weights2, biases2);
+        (actual - expected) * (actual - expected)
+    };
 
-        let error2 = {
-            let input = [0.0, 1.0];
-            let expected = 1.0;
-            let actual = multilayer_perceptron(&input, weights1, biases1, weights2, biases2);
-            (actual - expected) * (actual - expected)
-        };
+    let error2 = {
+        let input = [0.0, 1.0];
+        let expected = T::one();
+        let actual = multilayer_perceptron(&input, weights1, biases1, weights2, biases2);
+        (actual - expected) * (actual - expected)
+    };
 
-        let error3 = {
-            let input = [1.0, 0.0];
-            let expected = 1.0;
-            let actual = multilayer_perceptron(&input, weights1, biases1, weights2, biases2);
-            (actual - expected) * (actual - expected)
-        };
+    let error3 = {
+        let input = [1.0, 0.0];
+        let expected = T::one();
+        let actual = multilayer_perceptron(&input, weights1, biases1, weights2, biases2);
+        (actual - expected) * (actual - expected)
+    };
 
-        let error4 = {
-            let input = [1.0, 1.0];
-            let expected = 0.0;
-            let actual = multilayer_perceptron(&input, weights1, biases1, weights2, biases2);
-            (actual - expected) * (actual - expected)
-        };
+    let error4 = {
+        let input = [1.0, 1.0];
+        let expected = T::zero();
+        let actual = multilayer_perceptron(&input, weights1, biases1, weights2, biases2);
+        (actual - expected) * (actual - expected)
+    };
 
-        error1 + error2 + error3 + error4
-    }
+    error1 + error2 + error3 + error4
 }
 
 fn gradient(tape: &mut dyn adv::Tape, params: &adv::DVector<f64>) -> adv::DMatrix<f64> {

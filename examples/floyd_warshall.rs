@@ -1,63 +1,60 @@
 extern crate advantage as adv;
 
 use adv::prelude::*;
+use adv::Float;
 
-adv_struct! {
-    /// State of a floyd warshall execution
-    #[derive(Debug, Clone)]
-    struct FloydWarshallState {
-        pub n: usize,
-        pub k: usize,
-        pub dmat: Vec<Scalar>,
-    }
+/// State of a floyd warshall execution
+#[derive(Debug, Clone)]
+struct FloydWarshallState<T: Float> {
+    pub n: usize,
+    pub k: usize,
+    pub dmat: Vec<T>,
 }
 
-adv_fn! {
-    /// Initialize a floyd warshall matrix
-    fn floyd_warshall_init(n: usize, inf: f64) -> FloydWarshallState<Scalar> {
-        let mut state = FloydWarshallState {
-            n,
-            k: 0,
-            dmat: vec![inf.into(); n*n],
-        };
-        for i in 0..n {
-            state.dmat[i*n + i] = 0.0.into();
+/// Initialize a floyd warshall matrix
+fn floyd_warshall_init<T: Float + From<f64>>(n: usize, inf: f64) -> FloydWarshallState<T> {
+    let mut state = FloydWarshallState {
+        n,
+        k: 0,
+        dmat: vec![inf.into(); n * n],
+    };
+    for i in 0..n {
+        state.dmat[i * n + i] = 0.0.into();
+    }
+    state
+}
+
+/// Declare an edge in the floyd warshall matrix
+fn floyd_warshall_set_edge<T: Float>(
+    state: &mut FloydWarshallState<T>,
+    u: usize,
+    v: usize,
+    weight: T,
+) {
+    let n = state.n;
+    state.dmat[u * n + v] = weight;
+    state.dmat[v * n + u] = weight;
+}
+
+/// Declare an edge in the floyd warshall matrix
+fn floyd_warshall_get_edge<T: Float>(state: &FloydWarshallState<T>, u: usize, v: usize) -> T {
+    let n = state.n;
+    state.dmat[u * n + v]
+}
+
+/// Single step of the floyd warshall algorithm
+fn floyd_warshall_step<T: Float>(state: FloydWarshallState<T>) -> FloydWarshallState<T> {
+    let mut state = state;
+    let n = state.n;
+    let k = state.k;
+    for i in 0..n {
+        for j in 0..n {
+            state.dmat[i * n + j] =
+                state.dmat[i * n + j].min(state.dmat[i * n + k] + state.dmat[k * n + j]);
         }
-        state
     }
-}
-
-adv_fn! {
-    /// Declare an edge in the floyd warshall matrix
-    fn floyd_warshall_set_edge(state: &mut FloydWarshallState<Scalar>, u: usize, v: usize, weight: Scalar) {
-        let n = state.n;
-        state.dmat[u*n + v] = weight;
-        state.dmat[v*n + u] = weight;
-    }
-}
-
-adv_fn! {
-    /// Declare an edge in the floyd warshall matrix
-    fn floyd_warshall_get_edge(state: &FloydWarshallState<Scalar>, u: usize, v: usize) -> Scalar {
-        let n = state.n;
-        state.dmat[u*n + v]
-    }
-}
-
-adv_fn! {
-    /// Single step of the floyd warshall algorithm
-    fn floyd_warshall_step(state: FloydWarshallState<Scalar>) -> FloydWarshallState<Scalar> {
-        let mut state = state;
-        let n = state.n;
-        let k = state.k;
-        for i in 0..n {
-            for j in 0..n {
-                state.dmat[i*n + j] = state.dmat[i*n + j].min(state.dmat[i*n + k] + state.dmat[k*n + j]);
-            }
-        }
-        state.k += 1;
-        state
-    }
+    state.k += 1;
+    state
 }
 
 fn main() {
@@ -82,24 +79,20 @@ fn main() {
     //
     // Each intersection has a traffic light which allows entering the intersection only vertically
     // or horizontally at any given time.
-    adv_struct! {
-        struct TrafficLightParams {
-            pub top_bottom_quota: Scalar,
-            pub left_right_quota: Scalar,
-        }
+    struct TrafficLightParams<T: Float> {
+        pub top_bottom_quota: T,
+        pub left_right_quota: T,
     }
 
     // Of course quotas add up to 1.0 but for numerical stability reasons they may not be exactly
     // 0.0 or 1.0 alone. We can represent this using only 3 parameters since the 4th follows from
     // the other 3.
-    adv_fn! {
-        fn new_traffic_light(top_bottom_quota: Scalar) -> TrafficLightParams<Scalar> {
-            let top_bottom_quota = top_bottom_quota.max(0.01.into()).min(0.99.into());
-            let left_right_quota = 1.0 - top_bottom_quota;
-            TrafficLightParams {
-                top_bottom_quota,
-                left_right_quota,
-            }
+    fn new_traffic_light<T: Float + From<f64>>(top_bottom_quota: T) -> TrafficLightParams<T> {
+        let top_bottom_quota = top_bottom_quota.max(0.01.into()).min(0.99.into());
+        let left_right_quota = T::one() - top_bottom_quota;
+        TrafficLightParams {
+            top_bottom_quota,
+            left_right_quota,
         }
     }
 
@@ -155,19 +148,17 @@ fn main() {
         ctx.tape()
     }
 
-    adv_fn! {
-        /// We want the sum of routes between exits to be minimal
-        fn badness(graph: &FloydWarshallState<Scalar>) -> Scalar {
-            let exits = vec![0, 1, 2, 6, 9, 13, 16, 20, 21, 22];
-            let mut result = Scalar::zero();
-            for u in exits.iter().cloned() {
-                for v in exits.iter().cloned() {
-                    let edge = floyd_warshall_get_edge(graph, u, v);
-                    result += edge*edge;
-                }
+    /// We want the sum of routes between exits to be minimal
+    fn badness<T: Float>(graph: &FloydWarshallState<T>) -> T {
+        let exits = vec![0, 1, 2, 6, 9, 13, 16, 20, 21, 22];
+        let mut result = T::zero();
+        for u in exits.iter().cloned() {
+            for v in exits.iter().cloned() {
+                let edge = floyd_warshall_get_edge(graph, u, v);
+                result = result + edge * edge;
             }
-            result
         }
+        result
     }
 
     let mut ctx = adv::AContext::new();
