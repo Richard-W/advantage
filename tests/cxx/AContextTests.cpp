@@ -1,21 +1,21 @@
 #include <gtest/gtest.h>
 #include <adv.hpp>
 
-TEST(Context, init)
+TEST(AContext, init)
 {
-	adv::Context ctx;
+	adv::AContext ctx;
 }
 
-TEST(Context, get_doubles)
+TEST(AContext, get_doubles)
 {
-	adv::Context ctx;
+	adv::AContext ctx;
 	auto v1 = ctx.new_independent();
 	ctx.set_dependent(v1);
 }
 
-TEST(Context, record_simple_tape)
+TEST(AContext, record_simple_tape)
 {
-	adv::Context ctx;
+	adv::AContext ctx;
 	auto v1 = ctx.new_independent();
 	auto v2 = v1 * v1;
 	ctx.set_dependent(v2);

@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "ffi", feature(try_trait))]
-
 extern crate nalgebra;
 extern crate num;
 #[doc(hidden)]

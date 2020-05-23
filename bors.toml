@@ -2,6 +2,9 @@ status = [
 	"build (ubuntu-latest)",
 	"build (macOS-latest)",
 	"build (windows-latest)",
+	"cxx (ubuntu-latest)",
+	"cxx (macOS-latest)",
+	"cxx (windows-latest)",
 	"clippy",
 	"format",
 ]

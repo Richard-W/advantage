@@ -11,7 +11,6 @@ flags = [
 include_dirs = [
     'include',
     'build/include',
-    'build/target',
 ]
 
 for dir in include_dirs:
