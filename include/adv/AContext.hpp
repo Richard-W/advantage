@@ -1,33 +1,33 @@
 #ifndef _ADV_CONTEXT_HPP
 #define _ADV_CONTEXT_HPP
 
-#include "Double.hpp"
+#include "ADouble.hpp"
 
 namespace adv
 {
 
-class Context
+class AContext
 {
 public:
 	/// \brief Destructor
-	~Context();
+	~AContext();
 
 	/// \brief Default constructor.
-	Context();
+	AContext();
 	/// \brief Deleted copy constructor.
-	Context(const Context&) = delete;
+	AContext(const AContext&) = delete;
 	/// \brief Move constructor.
-	Context(Context&&);
+	AContext(AContext&&);
 
 	/// \brief Deleted copy assignment.
-	Context& operator=(const Context&) = delete;
+	AContext& operator=(const AContext&) = delete;
 	/// \brief Move assignment.
-	Context& operator=(Context&&);
+	AContext& operator=(AContext&&);
 
 	/// Get a new independent variable
-	Double new_independent();
+	ADouble new_independent();
 	/// Set a variable dependent
-	void set_dependent(const Double& var);
+	void set_dependent(const ADouble& var);
 
 private:
 	struct Impl;

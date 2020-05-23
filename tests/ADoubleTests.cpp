@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <adv.hpp>
 
-TEST(Double, arithmetic_ops)
+TEST(ADouble, arithmetic_ops)
 {
-	adv::Context ctx;
+	adv::AContext ctx;
 	auto a = ctx.new_independent();
 	auto b = ctx.new_independent();
 
@@ -23,9 +23,9 @@ TEST(Double, arithmetic_ops)
 	1.0 / a;
 }
 
-TEST(Double, unary_functions)
+TEST(ADouble, unary_functions)
 {
-	adv::Context ctx;
+	adv::AContext ctx;
 	auto x = ctx.new_independent();
 
 	adv::sin(x);
@@ -36,9 +36,9 @@ TEST(Double, unary_functions)
 	adv::ln(x);
 }
 
-TEST(Double, binary_functions)
+TEST(ADouble, binary_functions)
 {
-	adv::Context ctx;
+	adv::AContext ctx;
 	auto a = ctx.new_independent();
 	auto b = ctx.new_independent();
 

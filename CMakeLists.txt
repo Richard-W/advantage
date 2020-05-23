@@ -33,8 +33,8 @@ ExternalProject_add(advantage_rust
 )
 
 add_library(advantage SHARED
-	src/Context.cpp
-	src/Double.cpp
+	src/cxx/AContext.cpp
+	src/cxx/ADouble.cpp
 )
 add_dependencies(advantage advantage_rust)
 target_link_libraries(advantage PRIVATE

@@ -41,7 +41,7 @@ impl std::ops::Try for adv_error {
     }
 }
 
-// `Context` bindings
+// `AContext` bindings
 
 #[no_mangle]
 pub extern "C" fn adv_context_new() -> *mut AContext {

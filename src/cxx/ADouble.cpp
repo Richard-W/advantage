@@ -1,4 +1,4 @@
-#include <adv/Double.hpp>
+#include <adv/ADouble.hpp>
 #include "ffi.hpp"
 
 #include <cmath>
@@ -7,46 +7,46 @@
 namespace adv
 {
 
-struct Double::Impl
+struct ADouble::Impl
 {
 public:
 	adv_double* val;
 };
 
-Double::~Double()
+ADouble::~ADouble()
 {
 	::adv_double_free(m_impl->val);
 	delete m_impl;
 }
 
-Double::Double(void* impl):
+ADouble::ADouble(void* impl):
 	m_impl(new Impl)
 {
 	m_impl->val = reinterpret_cast<adv_double*>(impl);
 }
 
-Double::Double():
-	Double(::adv_double_default())
+ADouble::ADouble():
+	ADouble(::adv_double_default())
 {
 }
 
-Double::Double(double val):
-	Double(::adv_double_from_value(val))
+ADouble::ADouble(double val):
+	ADouble(::adv_double_from_value(val))
 {
 }
 
-Double::Double(const Double& other):
-	Double(::adv_double_copy(other.m_impl->val))
+ADouble::ADouble(const ADouble& other):
+	ADouble(::adv_double_copy(other.m_impl->val))
 {
 }
 
-Double::Double(Double&& other):
-	Double(other.m_impl->val)
+ADouble::ADouble(ADouble&& other):
+	ADouble(other.m_impl->val)
 {
 	other.m_impl->val = ::adv_double_default();
 }
 
-Double& Double::operator=(Double&& other)
+ADouble& ADouble::operator=(ADouble&& other)
 {
 	::adv_double_free(m_impl->val);
 	m_impl->val = other.m_impl->val;
@@ -54,29 +54,29 @@ Double& Double::operator=(Double&& other)
 	return *this;
 }
 
-Double& Double::operator=(const Double& other)
+ADouble& ADouble::operator=(const ADouble& other)
 {
 	::adv_double_free(m_impl->val);
 	m_impl->val = ::adv_double_copy(other.m_impl->val);
 	return *this;
 }
 
-const void* Double::get_impl() const
+const void* ADouble::get_impl() const
 {
 	return m_impl->val;
 }
 
 #define BINARY_OP_IMPL(NAME, OP) \
-	Double Double::operator OP(const Double& rhs) const \
+	ADouble ADouble::operator OP(const ADouble& rhs) const \
 	{ \
 		::adv_double* result_impl; \
 		::adv_op_##NAME(m_impl->val, rhs.m_impl->val, &result_impl); \
-		return Double(result_impl); \
+		return ADouble(result_impl); \
 	} \
 	\
-	Double operator OP(double lhs_, const Double& rhs) \
+	ADouble operator OP(double lhs_, const ADouble& rhs) \
 	{ \
-		auto lhs = Double(lhs_); \
+		auto lhs = ADouble(lhs_); \
 		return lhs + rhs; \
 	}
 BINARY_OP_IMPL(add, +)
@@ -86,10 +86,10 @@ BINARY_OP_IMPL(div, /)
 #undef BINARY_OP_IMPL
 
 #define UNARY_FUNC_IMPL(NAME, STDNAME) \
-	Double NAME(const Double& val) { \
+	ADouble NAME(const ADouble& val) { \
 		::adv_double* ptr; \
 		::adv_##NAME(val.m_impl->val, &ptr); \
-		return Double(ptr); \
+		return ADouble(ptr); \
 	} \
 	\
 	double NAME(double val) { \
@@ -105,10 +105,10 @@ UNARY_FUNC_IMPL(ln, log)
 #undef UNARY_FUNC_IMPL
 
 #define BINARY_FUNC_IMPL(NAME) \
-	Double NAME(const Double& lhs, const Double& rhs) { \
+	ADouble NAME(const ADouble& lhs, const ADouble& rhs) { \
 		::adv_double* ptr; \
 		::adv_##NAME(lhs.m_impl->val, rhs.m_impl->val, &ptr); \
-		return Double(ptr); \
+		return ADouble(ptr); \
 	}
 BINARY_FUNC_IMPL(min)
 BINARY_FUNC_IMPL(max)

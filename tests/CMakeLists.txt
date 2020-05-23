@@ -8,5 +8,5 @@ macro(adv_test name)
 	gtest_discover_tests(${name})
 endmacro()
 
-adv_test(ContextTests)
-adv_test(DoubleTests)
+adv_test(AContextTests)
+adv_test(ADoubleTests)
