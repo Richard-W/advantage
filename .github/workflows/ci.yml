@@ -29,6 +29,31 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
+  cxx:
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Build Directory
+      run: cmake -E make_directory ${{runner.workspace}}/build
+    - name: Configure
+      working-directory: ${{runner.workspace}}/build
+      run: cmake ${{runner.workspace}}/advantage
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build .
+    - name: Run Tests
+      working-directory: ${{runner.workspace}}/build
+      run: ctest
+
   clippy:
 
     runs-on: ubuntu-latest
