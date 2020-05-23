@@ -31,6 +31,16 @@ ExternalProject_add(advantage_rust
 	TEST_COMMAND ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${CARGO_TARGET_DIR} cargo test ${cargo_flags}
 	INSTALL_COMMAND ""
 )
+if (BUILD_TESTS)
+	ExternalProject_add(googletest
+		GIT_REPOSITORY https://github.com/google/googletest
+		GIT_TAG release-1.10.0
+		CMAKE_ARGS
+			-DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/gtest
+			-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+			-Dgtest_force_shared_crt=TRUE
+	)
+endif ()
 
 add_library(advantage SHARED
 	src/cxx/AContext.cpp
@@ -51,14 +61,22 @@ target_include_directories(advantage PUBLIC
 
 if (BUILD_TESTS)
 	enable_testing()
-	find_package(GTest REQUIRED)
+	include(GoogleTest)
 	macro(adv_test name)
 		add_executable(${name} tests/cxx/${name}.cpp)
+		add_dependencies(${name} googletest)
+		target_link_directories(${name} PRIVATE
+			${PROJECT_BINARY_DIR}/gtest/lib
+		)
+		target_include_directories(${name} PRIVATE
+			${PROJECT_BINARY_DIR}/gtest/include
+		)
 		target_link_libraries(${name}
 			advantage
-			GTest::GTest
-			GTest::Main
-			)
+			Threads::Threads
+			gtest$<$<CONFIG:Debug>:d>
+			gtest_main$<$<CONFIG:Debug>:d>
+		)
 		gtest_discover_tests(${name})
 	endmacro()
 	adv_test(AContextTests)
