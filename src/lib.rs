@@ -44,5 +44,4 @@ pub mod prelude {
 
     pub use super::adv_fn;
     pub use super::adv_fn_obj;
-    pub use super::adv_struct;
 }
