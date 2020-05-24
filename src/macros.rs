@@ -43,23 +43,3 @@ macro_rules! adv_fn_obj {
         }
     }
 }
-
-/// Create a generic struct for use in differentiable functions
-#[macro_export]
-macro_rules! adv_struct {
-    {
-        $(#[$attr:meta])*
-        $vis:vis struct $struct_name:ident {
-            $($tt:tt)*
-        }
-    } => {
-        $(#[$attr])*
-        $vis struct $struct_name < Scalar >
-        where
-            Scalar: $crate::Float + core::fmt::Debug + $crate::Arithmetic<f64, Scalar> + $crate::ArithmeticAssign<f64>,
-            f64: $crate::Arithmetic<Scalar, Scalar>,
-        {
-            $($tt)*
-        }
-    };
-}
