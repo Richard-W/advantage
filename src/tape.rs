@@ -120,7 +120,7 @@ mod tests {
             let v3 = -(2.0 - (2.0 + v2));
             let v4 = 2.0 / (2.0 * v3);
             let v5 = 1.0 / v4;
-            DVector::from_vec(vec![v5])
+            adv_dvec!(v5)
         }
     }
 

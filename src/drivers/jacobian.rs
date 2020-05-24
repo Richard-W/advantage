@@ -83,10 +83,9 @@ mod tests {
         fn test_function(input: [[2]]) -> [[2]] {
             let r = input[0];
             let phi = input[1];
-            let mut output = DVector::zeros(2);
-            output[0] = r * phi.cos();
-            output[1] = r * phi.sin();
-            output
+            let x = r * phi.cos();
+            let y = r * phi.sin();
+            adv_dvec![x, y]
         }
     }
 
