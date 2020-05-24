@@ -395,7 +395,7 @@ mod tests {
             let x1 = input[0];
             let x2 = input[1];
             let y = x1.abs() + x2;
-            DVector::from_vec(vec![y])
+            adv_dvec![y]
         }
     }
 

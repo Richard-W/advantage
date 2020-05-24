@@ -2,19 +2,19 @@ use super::*;
 
 adv_fn! {
     pub fn halfpipe(x: [[2]]) -> [[1]] {
-        DVector::from_vec(vec![(x[1].powi(2) - x[0].max(0.0.into())).max(0.0.into())])
+        adv_dvec![(x[1].powi(2) - x[0].max(0.0.into())).max(0.0.into())]
     }
 }
 
 adv_fn! {
     pub fn halfpipe_1(x: [[2]]) -> [[2]] {
-        DVector::from_vec(vec![x[0].max(0.0.into()), x[1].powi(2)])
+        adv_dvec![x[0].max(0.0.into()), x[1].powi(2)]
     }
 }
 
 adv_fn! {
     pub fn halfpipe_2(x: [[2]]) -> [[1]] {
-        DVector::from_vec(vec![(x[1] - x[0]).max(0.0.into())])
+        adv_dvec![(x[1] - x[0]).max(0.0.into())]
     }
 }
 
