@@ -1,4 +1,46 @@
+/// Replace a token by another token
+///
+/// Useful for counting repetitions in macros
+#[macro_export]
+#[doc(hidden)]
+macro_rules! adv_replace {
+    ($tt1:tt $tt2:expr) => {
+        $tt2
+    };
+}
+
 /// Define a function and automatically collect metadata
+///
+/// ## Example
+/// ```
+/// # extern crate advantage as adv;
+/// # use adv::prelude::*;
+/// adv_fn! {
+///     fn ax1(v: [[3]], a: f64) -> [[3]] {
+///         v.map(|x| a * x)
+///     }
+/// }
+///
+/// adv_fn! {
+///     fn ax2([[x1, x2, x3]], a: f64) -> [[3]] {
+///         adv_dvec![a * x1, a * x2, a * x3]
+///     }
+/// }
+///
+/// # fn main() {
+/// let x = adv_dvec!(1.0, 2.0, 3.0);
+/// let y = ax1(x, 2.0);
+/// assert_eq!(y[0], 2.0);
+/// assert_eq!(y[1], 4.0);
+/// assert_eq!(y[2], 6.0);
+///
+/// let x = adv_dvec!(1.0, 2.0, 3.0);
+/// let y = ax2(x, 2.0);
+/// assert_eq!(y[0], 2.0);
+/// assert_eq!(y[1], 4.0);
+/// assert_eq!(y[2], 6.0);
+/// # }
+/// ```
 #[macro_export]
 macro_rules! adv_fn {
     {
@@ -29,6 +71,24 @@ macro_rules! adv_fn {
                 $crate::SimpleFunction::new( $($arg_dim)*, $($result_dim)*, move |input| {
                     $func_name(input $(, $extra_arg.clone() )*)
                 })
+            }
+        }
+    };
+    {
+        $(#[$attr:meta])*
+        $vis:vis fn $func_name:ident ( [[$($arg_name:ident),*]] $( , $extra_arg:ident : $extra_type:ty )* $(,)? ) -> [[$($result_dim:tt)*]] {
+            $($tt:tt)*
+        }
+    } => {
+        adv_fn! {
+            $(#[$attr:meta])*
+            $vis fn $func_name (__input: [[0 $(+ $crate::adv_replace!($arg_name 1usize))*]] $( , $extra_arg : $extra_type)* ) -> [[$($result_dim)*]] {
+                let __arg_counter = 0;
+                $(
+                    let $arg_name = __input[__arg_counter];
+                    let __arg_counter = __arg_counter + 1;
+                )*
+                $($tt)*
             }
         }
     };
