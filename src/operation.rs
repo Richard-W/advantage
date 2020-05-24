@@ -67,7 +67,18 @@ pub(crate) fn first_order_value<S: Float>(
             let y = arg2.unwrap();
             let dx = darg1;
             let dy = darg2.unwrap();
-            y * x.powf(y - S::one()) * dx + x.ln() * x.powf(y) * dy
+
+            let rv1 = if dx != S::zero() {
+                y * x.powf(y - S::one()) * dx
+            } else {
+                S::zero()
+            };
+            let rv2 = if dy != S::zero() {
+                x.ln() * x.powf(y) * dy
+            } else {
+                S::zero()
+            };
+            rv1 + rv2
         }
         _ => panic!("Invalid opcode in first_order_value"),
     }
