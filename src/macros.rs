@@ -43,3 +43,31 @@ macro_rules! adv_fn_obj {
         }
     }
 }
+
+/// Create a `DVector` containing the arguments
+///
+/// ## Example
+/// ```
+/// # extern crate advantage as adv;
+/// # use adv::prelude::*;
+///
+/// # fn main() {
+/// let vec = adv_dvec![1.0, 2.0, 3.0];
+/// assert_eq!(vec.nrows(), 3);
+/// assert_eq!(vec[0], 1.0);
+/// assert_eq!(vec[1], 2.0);
+/// assert_eq!(vec[2], 3.0);
+///
+/// let vec = adv_dvec![1.0; 3];
+/// assert_eq!(vec.nrows(), 3);
+/// assert_eq!(vec[0], 1.0);
+/// assert_eq!(vec[1], 1.0);
+/// assert_eq!(vec[2], 1.0);
+/// # }
+/// ```
+#[macro_export]
+macro_rules! adv_dvec {
+    ($elem:expr; $n:expr) => ($crate::DVector::from_element($n, $elem));
+    ($($x:expr),*) => ($crate::DVector::from_vec(vec![$($x),*]));
+    ($($x:expr,)*) => ($crate::adv_dvec!($($x),*));
+}

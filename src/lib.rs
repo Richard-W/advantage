@@ -42,6 +42,7 @@ pub mod prelude {
     pub use super::Function as _;
     pub use super::Tape as _;
 
+    pub use super::adv_dvec;
     pub use super::adv_fn;
     pub use super::adv_fn_obj;
 }
