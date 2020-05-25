@@ -1,20 +1,20 @@
 use super::*;
 
 adv_fn! {
-    pub fn halfpipe(x: [[2]]) -> [[1]] {
-        adv_dvec![(x[1].powi(2) - x[0].max(0.0.into())).max(0.0.into())]
+    pub fn halfpipe([[x1, x2]]) -> [[1]] {
+        adv_dvec![(x2.powi(2) - x1.max(0.0.into())).max(0.0.into())]
     }
 }
 
 adv_fn! {
-    pub fn halfpipe_1(x: [[2]]) -> [[2]] {
-        adv_dvec![x[0].max(0.0.into()), x[1].powi(2)]
+    pub fn halfpipe_1([[x1, x2]]) -> [[2]] {
+        adv_dvec![x1.max(0.0.into()), x2.powi(2)]
     }
 }
 
 adv_fn! {
-    pub fn halfpipe_2(x: [[2]]) -> [[1]] {
-        adv_dvec![(x[1] - x[0]).max(0.0.into())]
+    pub fn halfpipe_2([[x1_pos, x2_sq]]) -> [[1]] {
+        adv_dvec![(x2_sq - x1_pos).max(0.0.into())]
     }
 }
 
