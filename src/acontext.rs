@@ -1,5 +1,6 @@
 use super::*;
 use num::{Float, NumCast};
+use std::any::Any;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, Weak};
@@ -7,22 +8,22 @@ use std::sync::{Arc, Mutex, Weak};
 static NEXT_CONTEXT_ID: AtomicUsize = AtomicUsize::new(1);
 
 lazy_static! {
-    static ref CONTEXT_MAP: Mutex<HashMap<usize, Weak<Mutex<AContextInner>>>> =
+    static ref CONTEXT_MAP: Mutex<HashMap<usize, Weak<dyn Any + Send + Sync>>> =
         Mutex::new(HashMap::new());
 }
 
 #[derive(Debug)]
-struct AContextInner {
+struct AContextInner<S: Float + Send + 'static> {
     cid: usize,
     pub indeps: Vec<usize>,
     pub deps: Vec<usize>,
     pub ops: Vec<Operation>,
-    pub vals: Vec<f64>,
+    pub vals: Vec<S>,
 }
 
-impl AContextInner {
+impl<S: Float + Send + 'static> AContextInner<S> {
     /// Construct a raw AContextInner
-    fn construct(cid: usize) -> AContextInner {
+    fn construct(cid: usize) -> Self {
         AContextInner {
             cid,
             indeps: Vec::new(),
@@ -33,7 +34,7 @@ impl AContextInner {
     }
 
     /// Create an AContextInner
-    pub fn new() -> Arc<Mutex<AContextInner>> {
+    pub fn new() -> Arc<Mutex<Self>> {
         let id = NEXT_CONTEXT_ID.fetch_add(1, Ordering::SeqCst);
         // May be a problem on 32bit platforms and 64bit platform running for
         // more than a couple of millions of years. Crash and burn!
@@ -51,7 +52,7 @@ impl AContextInner {
     }
 }
 
-impl Drop for AContextInner {
+impl<S: Float + Send + 'static> Drop for AContextInner<S> {
     fn drop(&mut self) {
         let mut ctx_map = CONTEXT_MAP.lock().unwrap();
         ctx_map.remove(&self.cid());
@@ -60,7 +61,7 @@ impl Drop for AContextInner {
 
 /// Records a function evaluation
 pub struct AContext {
-    inner: Arc<Mutex<AContextInner>>,
+    inner: Arc<Mutex<AContextInner<f64>>>,
 }
 
 impl AContext {
@@ -78,6 +79,7 @@ impl AContext {
             .unwrap()
             .get(&cid)
             .and_then(|weak| weak.upgrade())
+            .and_then(|arc| arc.downcast().ok())
             .map(|inner| AContext { inner })
     }
 
