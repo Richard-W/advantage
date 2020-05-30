@@ -60,20 +60,20 @@ impl<S: Float + Send + 'static> Drop for AContextInner<S> {
 }
 
 /// Records a function evaluation
-pub struct AContext {
-    inner: Arc<Mutex<AContextInner<f64>>>,
+pub struct AContext<S: Float + Send + 'static> {
+    inner: Arc<Mutex<AContextInner<S>>>,
 }
 
-impl AContext {
+impl<S: Float + Send + 'static> AContext<S> {
     /// Create a new AContext
-    pub fn new() -> AContext {
+    pub fn new() -> Self {
         AContext {
             inner: AContextInner::new(),
         }
     }
 
     /// Get a context by its id
-    pub fn from_cid(cid: usize) -> Option<AContext> {
+    pub fn from_cid(cid: usize) -> Option<Self> {
         CONTEXT_MAP
             .lock()
             .unwrap()
@@ -90,7 +90,7 @@ impl AContext {
     }
 
     /// Mark a variable as independent
-    pub fn set_indep<S: Float>(&mut self, x: &mut AFloat<S>) {
+    pub fn set_indep(&mut self, x: &mut AFloat<S>) {
         let mut inner = self.inner.lock().unwrap();
         let vid = inner.vals.len();
         inner.vals.push(NumCast::from(x.value()).unwrap());
@@ -99,7 +99,7 @@ impl AContext {
     }
 
     /// Mark a variable as dependent
-    pub fn set_dep<S: Float>(&mut self, x: &AFloat<S>) {
+    pub fn set_dep(&mut self, x: &AFloat<S>) {
         let mut inner = self.inner.lock().unwrap();
         let vid = match x.context() {
             Some((cid, vid)) => {
@@ -123,14 +123,14 @@ impl AContext {
     }
 
     /// Create idependent var
-    pub fn new_indep<S: Float>(&mut self, value: S) -> AFloat<S> {
+    pub fn new_indep(&mut self, value: S) -> AFloat<S> {
         let mut indep = AFloat::new(value, S::zero());
         self.set_indep(&mut indep);
         indep
     }
 
     /// Create idependent vector
-    pub fn new_indep_vec<S: Float>(&mut self, length: usize, value: S) -> Vec<AFloat<S>> {
+    pub fn new_indep_vec(&mut self, length: usize, value: S) -> Vec<AFloat<S>> {
         let mut vec = vec![AFloat::new(value, S::zero()); length];
         for x in vec.iter_mut() {
             self.set_indep(x);
@@ -139,14 +139,14 @@ impl AContext {
     }
 
     /// Set slice dependent
-    pub fn set_dep_slice<S: Float>(&mut self, slice: &[AFloat<S>]) {
+    pub fn set_dep_slice(&mut self, slice: &[AFloat<S>]) {
         for x in slice.iter() {
             self.set_dep(x);
         }
     }
 
     /// Record an operation
-    pub fn record<S: Float>(
+    pub fn record(
         &mut self,
         opcode: OpCode,
         val: S,
@@ -184,7 +184,7 @@ impl AContext {
     }
 
     /// Get all intermediate values
-    pub fn values(&self) -> Vec<f64> {
+    pub fn values(&self) -> Vec<S> {
         let inner = self.inner.lock().unwrap();
         inner.vals.clone()
     }
@@ -195,12 +195,16 @@ impl AContext {
             indeps: self.indeps(),
             deps: self.deps(),
             ops: self.operations(),
-            vals: self.values(),
+            vals: self
+                .values()
+                .into_iter()
+                .map(|x| NumCast::from(x).unwrap())
+                .collect(),
         }
     }
 }
 
-impl Default for AContext {
+impl<S: Float + Send + 'static> Default for AContext<S> {
     fn default() -> Self {
         Self::new()
     }
@@ -244,7 +248,7 @@ mod tests {
     fn acontext_new_and_drop() {
         let mut success = true;
         let cid = {
-            let ctx = AContext::new();
+            let ctx = AContext::<f64>::new();
             let cid = ctx.cid();
             let ctx_map = CONTEXT_MAP.lock().unwrap();
             if !ctx_map.contains_key(&cid) {
