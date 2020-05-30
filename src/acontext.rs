@@ -165,40 +165,17 @@ impl<S: Float + Send + 'static> AContext<S> {
         vid
     }
 
-    /// Get all independents
-    pub fn indeps(&self) -> Vec<usize> {
-        let inner = self.inner.lock().unwrap();
-        inner.indeps.clone()
-    }
-
-    /// Get all dependents
-    pub fn deps(&self) -> Vec<usize> {
-        let inner = self.inner.lock().unwrap();
-        inner.deps.clone()
-    }
-
-    /// Get all operations
-    pub fn operations(&self) -> Vec<Operation> {
-        let inner = self.inner.lock().unwrap();
-        inner.ops.clone()
-    }
-
-    /// Get all intermediate values
-    pub fn values(&self) -> Vec<S> {
-        let inner = self.inner.lock().unwrap();
-        inner.vals.clone()
-    }
-
     /// Get a tape
     pub fn tape(&self) -> impl Tape + Clone {
+        let inner = self.inner.lock().unwrap();
         AContextTape {
-            indeps: self.indeps(),
-            deps: self.deps(),
-            ops: self.operations(),
-            vals: self
-                .values()
-                .into_iter()
-                .map(|x| NumCast::from(x).unwrap())
+            indeps: inner.indeps.clone(),
+            deps: inner.deps.clone(),
+            ops: inner.ops.clone(),
+            vals: inner
+                .vals
+                .iter()
+                .map(|x| NumCast::from(*x).unwrap())
                 .collect(),
         }
     }
@@ -276,8 +253,9 @@ mod tests {
             ctx.set_indep(&mut b);
             let c = a + b;
             ctx.set_dep(&c);
+            let tape = ctx.tape();
 
-            let ops = ctx.operations();
+            let ops = tape.ops_iter().collect::<Vec<_>>();
             assert_eq!(ops.len(), 1);
             let op = ops[0];
             assert_eq!(op.opcode, OpCode::Add);
@@ -285,7 +263,7 @@ mod tests {
             assert_eq!(op.arg2, Some(1));
             assert_eq!(op.vid, 2);
 
-            let vals = ctx.values();
+            let vals = tape.values();
             assert!((vals[0] - 1.0).abs() < std::f64::EPSILON);
             assert!((vals[1] - 2.0).abs() < std::f64::EPSILON);
             assert!((vals[2] - 3.0).abs() < std::f64::EPSILON);
@@ -297,8 +275,9 @@ mod tests {
             ctx.set_indep(&mut a);
             let c = a + b;
             ctx.set_dep(&c);
+            let tape = ctx.tape();
 
-            let ops = ctx.operations();
+            let ops = tape.ops_iter().collect::<Vec<_>>();
             assert_eq!(ops.len(), 2);
             assert_eq!(ops[0].opcode, OpCode::Const);
             assert_eq!(ops[0].arg1, None);
@@ -309,7 +288,7 @@ mod tests {
             assert_eq!(ops[1].arg2, Some(1));
             assert_eq!(ops[1].vid, 2);
 
-            let vals = ctx.values();
+            let vals = tape.values();
             assert!((vals[0] - 1.0).abs() < std::f64::EPSILON);
             assert!((vals[1] - 2.0).abs() < std::f64::EPSILON);
             assert!((vals[2] - 3.0).abs() < std::f64::EPSILON);
@@ -321,8 +300,9 @@ mod tests {
             ctx.set_indep(&mut b);
             let c = a + b;
             ctx.set_dep(&c);
+            let tape = ctx.tape();
 
-            let ops = ctx.operations();
+            let ops = tape.ops_iter().collect::<Vec<_>>();
             assert_eq!(ops.len(), 2);
             assert_eq!(ops[0].opcode, OpCode::Const);
             assert_eq!(ops[0].arg1, None);
@@ -333,7 +313,7 @@ mod tests {
             assert_eq!(ops[1].arg2, Some(0));
             assert_eq!(ops[1].vid, 2);
 
-            let vals = ctx.values();
+            let vals = tape.values();
             assert!((vals[0] - 2.0).abs() < std::f64::EPSILON);
             assert!((vals[1] - 1.0).abs() < std::f64::EPSILON);
             assert!((vals[2] - 3.0).abs() < std::f64::EPSILON);
