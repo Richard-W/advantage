@@ -166,7 +166,7 @@ impl<S: Float + Send + 'static> AContext<S> {
     }
 
     /// Get a tape
-    pub fn tape(&self) -> impl Tape + Clone {
+    pub fn tape(&self) -> impl Tape<f64> + Clone {
         let inner = self.inner.lock().unwrap();
         AContextTape {
             indeps: inner.indeps.clone(),
@@ -195,7 +195,7 @@ struct AContextTape {
     vals: Vec<f64>,
 }
 
-impl Tape for AContextTape {
+impl Tape<f64> for AContextTape {
     fn indeps(&self) -> &[usize] {
         &self.indeps
     }

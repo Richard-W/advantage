@@ -15,7 +15,7 @@ fn test_function<T: Float>(input: Vec<T>) -> T {
         .fold(T::zero(), |a, b| a.max(b))
 }
 
-fn test_function_tape() -> impl adv::Tape {
+fn test_function_tape() -> impl adv::Tape<f64> {
     let mut ctx = adv::AContext::new();
     let input = ctx.new_indep_vec(2_usize.pow(15), 0.0);
     let output = test_function(input);

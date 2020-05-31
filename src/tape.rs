@@ -3,21 +3,21 @@ use std::fmt;
 use std::iter::{DoubleEndedIterator, Iterator};
 
 /// Evaluation procedure and intermediate values of a function evaluation
-pub trait Tape: Send + Sync + fmt::Debug {
+pub trait Tape<S: Float + 'static>: Send + Sync + fmt::Debug {
     /// Independent variable indices
     fn indeps(&self) -> &[usize];
     /// Dependent variable indices
     fn deps(&self) -> &[usize];
     /// Get intermediate values
-    fn values(&self) -> &[f64];
+    fn values(&self) -> &[S];
     /// Get intermediate values (mutable)
-    fn values_mut(&mut self) -> &mut [f64];
+    fn values_mut(&mut self) -> &mut [S];
     /// Iterate through operations
     fn ops_iter<'a>(&'a self) -> Box<dyn DoubleEndedIterator<Item = Operation> + 'a>;
 }
 
 /// Extra functions on a tape
-pub trait TapeExt {
+pub trait TapeExt<S: Float + 'static> {
     /// Number of independents
     fn num_indeps(&self) -> usize;
 
@@ -31,24 +31,34 @@ pub trait TapeExt {
     fn max_id(&self) -> usize;
 
     /// Stored arguments to the function
-    fn x(&self) -> DVector<f64>;
+    fn x(&self) -> DVector<S>
+    where
+        S: fmt::Debug;
 
     /// Stored result of the function
-    fn y(&self) -> DVector<f64>;
+    fn y(&self) -> DVector<S>
+    where
+        S: fmt::Debug;
 
     /// Re-evaluate function from stored evaluation procedure
-    fn zero_order(&mut self, x: &DVector<f64>);
+    fn zero_order(&mut self, x: &DVector<S>)
+    where
+        S: fmt::Debug;
 
     /// Calculate adjoint of Jacobian
-    fn first_order_forward(&self, dx: &DVector<f64>) -> DVector<f64>;
+    fn first_order_forward(&self, dx: &DVector<S>) -> DVector<S>
+    where
+        S: fmt::Debug;
 
     /// Calculate reverse-adjoint of Jacobian
-    fn first_order_reverse(&self, ybar: &DVector<f64>) -> DVector<f64>;
+    fn first_order_reverse(&self, ybar: &DVector<S>) -> DVector<S>
+    where
+        S: fmt::Debug;
 }
 
-impl<T> TapeExt for T
+impl<T, S: Float + 'static> TapeExt<S> for T
 where
-    T: Tape + ?Sized,
+    T: Tape<S> + ?Sized,
 {
     fn num_indeps(&self) -> usize {
         self.indeps().len()
@@ -71,7 +81,10 @@ where
         indep_max.max(dep_max).max(op_max)
     }
 
-    fn x(&self) -> DVector<f64> {
+    fn x(&self) -> DVector<S>
+    where
+        S: fmt::Debug,
+    {
         let mut x = DVector::zeros(self.num_indeps());
         for (idx, vid) in self.indeps().iter().enumerate() {
             x[idx] = self.values()[*vid];
@@ -79,7 +92,10 @@ where
         x
     }
 
-    fn y(&self) -> DVector<f64> {
+    fn y(&self) -> DVector<S>
+    where
+        S: fmt::Debug,
+    {
         let mut y = DVector::zeros(self.num_deps());
         for (idx, vid) in self.deps().iter().enumerate() {
             y[idx] = self.values()[*vid];
@@ -87,7 +103,10 @@ where
         y
     }
 
-    fn zero_order(&mut self, x: &DVector<f64>) {
+    fn zero_order(&mut self, x: &DVector<S>)
+    where
+        S: fmt::Debug,
+    {
         assert_eq!(x.nrows(), self.num_indeps());
         let indeps = self.indeps().to_vec();
         let ops = self.ops_iter().collect::<Vec<_>>();
@@ -100,9 +119,12 @@ where
         }
     }
 
-    fn first_order_forward(&self, dx: &DVector<f64>) -> DVector<f64> {
+    fn first_order_forward(&self, dx: &DVector<S>) -> DVector<S>
+    where
+        S: fmt::Debug,
+    {
         let v = self.values();
-        let mut dv = vec![0.0; v.len()];
+        let mut dv = vec![S::zero(); v.len()];
         for (idx, vid) in self.indeps().iter().enumerate() {
             dv[*vid] = dx[idx];
         }
@@ -116,9 +138,12 @@ where
         dy
     }
 
-    fn first_order_reverse(&self, ybar: &DVector<f64>) -> DVector<f64> {
+    fn first_order_reverse(&self, ybar: &DVector<S>) -> DVector<S>
+    where
+        S: fmt::Debug,
+    {
         let v = self.values();
-        let mut vbar = vec![0.0; v.len()];
+        let mut vbar = vec![S::zero(); v.len()];
         for (idx, vid) in self.deps().iter().enumerate() {
             vbar[*vid] = ybar[idx];
         }

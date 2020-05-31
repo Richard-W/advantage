@@ -136,7 +136,7 @@ fn main() {
     }
     let tape_init = ctx.tape();
 
-    fn tape_step(n: usize, k: usize) -> impl adv::Tape + Clone {
+    fn tape_step(n: usize, k: usize) -> impl adv::Tape<f64> + Clone {
         let mut ctx = adv::AContext::new();
         let input = FloydWarshallState {
             n,
@@ -189,7 +189,7 @@ fn main() {
 
     let calculate_gradient = |params: &adv::DVector<f64>| {
         let forward = |(i, x)| {
-            let mut tape: Box<dyn adv::Tape> = if i == 0 {
+            let mut tape: Box<dyn adv::Tape<f64>> = if i == 0 {
                 Box::new(tape_init.clone())
             } else if i > 0 && i < (n + 1) {
                 Box::new(tape_step(n, i - 1))
@@ -201,7 +201,7 @@ fn main() {
             (i + 1, y)
         };
         let reverse = |(i, x), gen_jac_next| {
-            let mut tape: Box<dyn adv::Tape> = if i == 0 {
+            let mut tape: Box<dyn adv::Tape<f64>> = if i == 0 {
                 Box::new(tape_init.clone())
             } else if i > 0 && i < (n + 1) {
                 Box::new(tape_step(n, i - 1))

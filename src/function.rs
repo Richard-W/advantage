@@ -23,7 +23,7 @@ pub trait Function: Send + Sync {
     }
 
     /// Create a tape of the function
-    fn tape(&self, x: &DVector<f64>) -> Box<dyn Tape> {
+    fn tape(&self, x: &DVector<f64>) -> Box<dyn Tape<f64>> {
         let mut ctx = AContext::new();
         let mut input = x.map(|x| x.into());
         for x in input.iter_mut() {

@@ -45,7 +45,7 @@ pub fn jacobian_forward(func: &dyn Function, x: &DVector<f64>) -> DMatrix<f64> {
 
 /// Create a jacobian using reverse-mode automatic differentiation
 #[allow(clippy::many_single_char_names)]
-pub fn jacobian_reverse(tape: &dyn Tape) -> DMatrix<f64> {
+pub fn jacobian_reverse(tape: &dyn Tape<f64>) -> DMatrix<f64> {
     let n = tape.num_indeps();
     let m = tape.num_deps();
 
@@ -89,7 +89,7 @@ mod tests {
         }
     }
 
-    fn test_function_tape() -> impl Tape {
+    fn test_function_tape() -> impl Tape<f64> {
         let mut ctx = AContext::new();
         let input = DVector::from_vec(ctx.new_indep_vec(2, 0.0));
         let output = test_function(input);

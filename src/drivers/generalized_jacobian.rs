@@ -39,7 +39,7 @@ pub fn generalized_jacobian(
 /// Derive the Generalized Jacobian of a tape
 #[allow(clippy::many_single_char_names)]
 pub fn generalized_jacobian_tape(
-    tape: Box<dyn Tape>,
+    tape: Box<dyn Tape<f64>>,
     dx: &DVector<f64>,
     sign_bits: &[u8],
     next: Option<GeneralizedJacobian>,

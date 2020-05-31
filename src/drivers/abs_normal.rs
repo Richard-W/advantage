@@ -5,7 +5,7 @@ use rayon::prelude::*;
 /// Wraps a tape containing abs-calls and decomposes it for algorithms specific to piecewise-smooth functions
 #[derive(Debug)]
 pub struct AbsNormalTape {
-    inner: Box<dyn Tape>,
+    inner: Box<dyn Tape<f64>>,
     indeps: Vec<usize>,
     deps: Vec<usize>,
     n: usize,
@@ -14,7 +14,7 @@ pub struct AbsNormalTape {
 }
 
 impl AbsNormalTape {
-    pub fn new(inner: Box<dyn Tape>) -> Self {
+    pub fn new(inner: Box<dyn Tape<f64>>) -> Self {
         // Save dimensions
         let n = inner.num_indeps();
         let m = inner.num_deps();
@@ -96,7 +96,7 @@ impl AbsNormalTape {
     }
 }
 
-impl Tape for AbsNormalTape {
+impl Tape<f64> for AbsNormalTape {
     fn indeps(&self) -> &[usize] {
         &self.indeps
     }
@@ -232,7 +232,7 @@ macro_rules! anf_matrix {
             }
         }
 
-        impl<'b> Tape for $name<'b> {
+        impl<'b> Tape<f64> for $name<'b> {
             fn indeps(&self) -> &[usize] {
                 &self.indeps
             }

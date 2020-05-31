@@ -68,7 +68,7 @@ fn xor_error<T: Float>(weights1: &[T], biases1: &[T], weights2: &[T], biases2: &
     error1 + error2 + error3 + error4
 }
 
-fn gradient(tape: &mut dyn adv::Tape, params: &adv::DVector<f64>) -> adv::DMatrix<f64> {
+fn gradient(tape: &mut dyn adv::Tape<f64>, params: &adv::DVector<f64>) -> adv::DMatrix<f64> {
     tape.zero_order(params);
     adv::drivers::jacobian_reverse(tape).transpose()
 }
