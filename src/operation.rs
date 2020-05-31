@@ -242,7 +242,7 @@ impl Operation {
         }
     }
 
-    pub fn zero_order(self, v: &mut [f64]) {
+    pub fn zero_order<S: Float>(self, v: &mut [S]) {
         match self.opcode {
             OpCode::Nop => {}
             OpCode::Const => {}
@@ -253,11 +253,11 @@ impl Operation {
         }
     }
 
-    pub fn first_order(self, v: &[f64], dv: &mut [f64]) {
+    pub fn first_order<S: Float>(self, v: &[S], dv: &mut [S]) {
         match self.opcode {
             OpCode::Nop => {}
             OpCode::Const => {
-                dv[self.vid] = 0.0;
+                dv[self.vid] = S::zero();
             }
             _ => {
                 dv[self.vid] = first_order_value(
@@ -271,7 +271,7 @@ impl Operation {
         }
     }
 
-    pub fn first_order_reverse(self, v: &[f64], vbar: &mut [f64]) {
+    pub fn first_order_reverse<S: Float>(self, v: &[S], vbar: &mut [S]) {
         // ∂s/∂v_i = sum_j ∂s/∂v_j * ∂v_j/∂v_i  + ...
         // vbar_i := ∂s/∂v_i
         // => vbar_i = sum_j vbar_j * ∂v_j/∂v_i
@@ -283,33 +283,36 @@ impl Operation {
                 // =>
                 // vbar_j += vbar_i * ∂v_i/∂v_j = vbar_i
                 // vbar_k += vbar_i * ∂v_i/∂v_k = vbar_i
-                vbar[self.arg1.unwrap()] += vbar[self.vid];
-                vbar[self.arg2.unwrap()] += vbar[self.vid];
+                vbar[self.arg1.unwrap()] = vbar[self.arg1.unwrap()] + vbar[self.vid];
+                vbar[self.arg2.unwrap()] = vbar[self.arg2.unwrap()] + vbar[self.vid];
             }
             OpCode::Sub => {
                 // v_i = v_j - v_k
                 // =>
                 // vbar_j += vbar_i * ∂v_i/∂v_j = vbar_i
                 // vbar_k += vbar_i * ∂v_i/∂v_k = -vbar_i
-                vbar[self.arg1.unwrap()] += vbar[self.vid];
-                vbar[self.arg2.unwrap()] += -vbar[self.vid];
+                vbar[self.arg1.unwrap()] = vbar[self.arg1.unwrap()] + vbar[self.vid];
+                vbar[self.arg2.unwrap()] = vbar[self.arg2.unwrap()] + -vbar[self.vid];
             }
             OpCode::Mul => {
                 // v_i = v_j * v_k
                 // =>
                 // vbar_j += vbar_i * ∂v_i/∂v_j = vbar_i * v_k
                 // vbar_k += vbar_i * ∂v_i/∂v_k = vbar_i * v_j
-                vbar[self.arg1.unwrap()] += vbar[self.vid] * v[self.arg2.unwrap()];
-                vbar[self.arg2.unwrap()] += vbar[self.vid] * v[self.arg1.unwrap()];
+                vbar[self.arg1.unwrap()] =
+                    vbar[self.arg1.unwrap()] + vbar[self.vid] * v[self.arg2.unwrap()];
+                vbar[self.arg2.unwrap()] =
+                    vbar[self.arg2.unwrap()] + vbar[self.vid] * v[self.arg1.unwrap()];
             }
             OpCode::Div => {
                 // v_i = v_j / v_k
                 // =>
                 // vbar_j += vbar_i * ∂v_i/∂v_j = vbar_i * 1/v_k
                 // vbar_k += vbar_i * ∂v_i/∂v_k = vbar_i * -v_j/(v_k^2)
-                vbar[self.arg1.unwrap()] += vbar[self.vid] * 1.0 / v[self.arg2.unwrap()];
-                vbar[self.arg2.unwrap()] +=
-                    vbar[self.vid] * (-v[self.arg1.unwrap()] / v[self.arg2.unwrap()].powi(2));
+                vbar[self.arg1.unwrap()] =
+                    vbar[self.arg1.unwrap()] + vbar[self.vid] * S::one() / v[self.arg2.unwrap()];
+                vbar[self.arg2.unwrap()] = vbar[self.arg2.unwrap()]
+                    + vbar[self.vid] * (-v[self.arg1.unwrap()] / v[self.arg2.unwrap()].powi(2));
             }
             OpCode::Powf => {
                 // v_i = v_j^v_k
@@ -318,8 +321,10 @@ impl Operation {
                 // vbar_k += vbar_i * ∂v_i/∂v_k = vbar_i * v_j.ln() * v_j.powf(v_k)
                 let x = v[self.arg1.unwrap()];
                 let y = v[self.arg2.unwrap()];
-                vbar[self.arg1.unwrap()] += vbar[self.vid] * y * x.powf(y - 1.0);
-                vbar[self.arg2.unwrap()] += vbar[self.vid] * x.ln() * x.powf(y);
+                vbar[self.arg1.unwrap()] =
+                    vbar[self.arg1.unwrap()] + vbar[self.vid] * y * x.powf(y - S::one());
+                vbar[self.arg2.unwrap()] =
+                    vbar[self.arg2.unwrap()] + vbar[self.vid] * x.ln() * x.powf(y);
             }
             OpCode::Abs => {
                 panic!("Abs-function encountered in first_order_reverse");
@@ -327,8 +332,15 @@ impl Operation {
             _ => {
                 // Unary function
                 // vbar_j += vbar_i * ∂v_i/∂v_j
-                vbar[self.arg1.unwrap()] += vbar[self.vid]
-                    * first_order_value(self.opcode, v[self.arg1.unwrap()], None, 1.0, None);
+                vbar[self.arg1.unwrap()] = vbar[self.arg1.unwrap()]
+                    + vbar[self.vid]
+                        * first_order_value(
+                            self.opcode,
+                            v[self.arg1.unwrap()],
+                            None,
+                            S::one(),
+                            None,
+                        );
             }
         }
     }
