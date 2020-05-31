@@ -14,25 +14,56 @@ pub trait Tape: Send + Sync + fmt::Debug {
     fn values_mut(&mut self) -> &mut [f64];
     /// Iterate through operations
     fn ops_iter<'a>(&'a self) -> Box<dyn DoubleEndedIterator<Item = Operation> + 'a>;
+}
 
+/// Extra functions on a tape
+pub trait TapeExt {
     /// Number of independents
+    fn num_indeps(&self) -> usize;
+
+    /// Number of dependents
+    fn num_deps(&self) -> usize;
+
+    /// Number of abs-function operations
+    fn num_abs(&self) -> usize;
+
+    /// Maximum value idx on this tape
+    fn max_id(&self) -> usize;
+
+    /// Stored arguments to the function
+    fn x(&self) -> DVector<f64>;
+
+    /// Stored result of the function
+    fn y(&self) -> DVector<f64>;
+
+    /// Re-evaluate function from stored evaluation procedure
+    fn zero_order(&mut self, x: &DVector<f64>);
+
+    /// Calculate adjoint of Jacobian
+    fn first_order_forward(&self, dx: &DVector<f64>) -> DVector<f64>;
+
+    /// Calculate reverse-adjoint of Jacobian
+    fn first_order_reverse(&self, ybar: &DVector<f64>) -> DVector<f64>;
+}
+
+impl<T> TapeExt for T
+where
+    T: Tape + ?Sized,
+{
     fn num_indeps(&self) -> usize {
         self.indeps().len()
     }
 
-    /// Number of dependents
     fn num_deps(&self) -> usize {
         self.deps().len()
     }
 
-    /// Number of abs-function operations
     fn num_abs(&self) -> usize {
         self.ops_iter()
             .filter(|op| op.opcode == OpCode::Abs)
             .count()
     }
 
-    /// Maximum value idx on this tape
     fn max_id(&self) -> usize {
         let indep_max = self.indeps().iter().cloned().max().unwrap_or(0);
         let dep_max = self.deps().iter().cloned().max().unwrap_or(0);
@@ -40,7 +71,6 @@ pub trait Tape: Send + Sync + fmt::Debug {
         indep_max.max(dep_max).max(op_max)
     }
 
-    /// Stored arguments to the function
     fn x(&self) -> DVector<f64> {
         let mut x = DVector::zeros(self.num_indeps());
         for (idx, vid) in self.indeps().iter().enumerate() {
@@ -49,7 +79,6 @@ pub trait Tape: Send + Sync + fmt::Debug {
         x
     }
 
-    /// Stored result of the function
     fn y(&self) -> DVector<f64> {
         let mut y = DVector::zeros(self.num_deps());
         for (idx, vid) in self.deps().iter().enumerate() {
@@ -58,7 +87,6 @@ pub trait Tape: Send + Sync + fmt::Debug {
         y
     }
 
-    /// Re-evaluate function from stored evaluation procedure
     fn zero_order(&mut self, x: &DVector<f64>) {
         assert_eq!(x.nrows(), self.num_indeps());
         let indeps = self.indeps().to_vec();
@@ -72,7 +100,6 @@ pub trait Tape: Send + Sync + fmt::Debug {
         }
     }
 
-    /// Calculate adjoint of Jacobian
     fn first_order_forward(&self, dx: &DVector<f64>) -> DVector<f64> {
         let v = self.values();
         let mut dv = vec![0.0; v.len()];
@@ -89,7 +116,6 @@ pub trait Tape: Send + Sync + fmt::Debug {
         dy
     }
 
-    /// Calculate reverse-adjoint of Jacobian
     fn first_order_reverse(&self, ybar: &DVector<f64>) -> DVector<f64> {
         let v = self.values();
         let mut vbar = vec![0.0; v.len()];
