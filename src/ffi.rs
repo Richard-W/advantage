@@ -2,25 +2,25 @@
 use super::*;
 use num::Zero;
 
-// `AContext` bindings
+// `AContext<f64>` bindings
 
 #[no_mangle]
-pub extern "C" fn adv_acontext_new() -> *mut AContext {
+pub extern "C" fn adv_acontext_new() -> *mut AContext<f64> {
     Box::leak(Box::new(AContext::new()))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn adv_acontext_free(this: *mut AContext) {
+pub unsafe extern "C" fn adv_acontext_free(this: *mut AContext<f64>) {
     Box::from_raw(this);
 }
 
 #[no_mangle]
-pub extern "C" fn adv_acontext_new_independent(this: &'static mut AContext) -> *mut ADouble {
+pub extern "C" fn adv_acontext_new_independent(this: &'static mut AContext<f64>) -> *mut ADouble {
     Box::leak(Box::new(this.new_indep(0.0)))
 }
 
 #[no_mangle]
-pub extern "C" fn adv_acontext_set_dependent(this: &mut AContext, val: &ADouble) {
+pub extern "C" fn adv_acontext_set_dependent(this: &mut AContext<f64>, val: &ADouble) {
     this.set_dep(val);
 }
 
