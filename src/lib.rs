@@ -9,7 +9,7 @@ extern crate lazy_static;
 extern crate static_assertions;
 
 pub use nalgebra::{DMatrix, DVector};
-pub use num::traits::Float;
+use num::Float as _;
 
 pub mod drivers;
 
@@ -24,6 +24,9 @@ pub use afloat::*;
 
 #[cfg(feature = "ffi")]
 pub mod ffi;
+
+mod float;
+pub use float::*;
 
 mod function;
 pub use function::*;
@@ -42,6 +45,9 @@ pub mod prelude {
     pub use super::Function as _;
     pub use super::Tape as _;
     pub use super::TapeExt as _;
+
+    pub use super::Float as _;
+    pub use num::Float as _;
 
     pub use super::adv_dvec;
     pub use super::adv_fn;

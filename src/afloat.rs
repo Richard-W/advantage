@@ -1,5 +1,5 @@
 use super::*;
-use num::traits::{Float, Num, NumCast, One, ToPrimitive, Zero};
+use num::traits::{Num, NumCast, One, ToPrimitive, Zero};
 
 /// Single precision `AFloat`
 pub type ASingle = AFloat<f32>;
@@ -8,7 +8,7 @@ pub type ADouble = AFloat<f64>;
 
 /// Floating point variable type for tapeless forward-mode automatic differentiation
 #[derive(Clone, Copy, Debug)]
-pub struct AFloat<S: Float + Send + 'static> {
+pub struct AFloat<S: Float> {
     /// Zero-order value
     v: S,
     /// First order value
@@ -17,7 +17,7 @@ pub struct AFloat<S: Float + Send + 'static> {
     ctx: Option<(usize, usize)>,
 }
 
-impl<S: Float + Send + 'static> AFloat<S> {
+impl<S: Float> AFloat<S> {
     /// Create a variable from its zero- and first-order value
     pub fn new(v: S, dv: S) -> Self {
         Self { v, dv, ctx: None }
@@ -95,7 +95,7 @@ impl<S: Float + Send + 'static> AFloat<S> {
     }
 
     /// Cast to different value type
-    pub fn cast<T: Float + Send + 'static>(x: AFloat<T>) -> Self {
+    pub fn cast<T: Float>(x: AFloat<T>) -> Self {
         Self {
             v: S::from(x.v).unwrap(),
             dv: S::from(x.dv).unwrap(),
@@ -112,25 +112,25 @@ impl<S: Float + Send + 'static> AFloat<S> {
     }
 }
 
-impl<S: Float + Send + 'static> std::cmp::PartialEq<AFloat<S>> for AFloat<S> {
+impl<S: Float> std::cmp::PartialEq<AFloat<S>> for AFloat<S> {
     fn eq(&self, other: &Self) -> bool {
         self.v.eq(&other.v)
     }
 }
 
-impl<S: Float + Send + 'static> std::cmp::PartialOrd<AFloat<S>> for AFloat<S> {
+impl<S: Float> std::cmp::PartialOrd<AFloat<S>> for AFloat<S> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.v.partial_cmp(&other.v)
     }
 }
 
-impl<S: Float + Send + 'static> From<S> for AFloat<S> {
+impl<S: Float> From<S> for AFloat<S> {
     fn from(scalar: S) -> Self {
         AFloat::new(scalar, S::zero())
     }
 }
 
-impl<S: Float + Send + 'static> std::ops::Neg for AFloat<S> {
+impl<S: Float> std::ops::Neg for AFloat<S> {
     type Output = AFloat<S>;
     fn neg(self) -> Self {
         (Self::zero() - Self::one()) * self
@@ -139,21 +139,21 @@ impl<S: Float + Send + 'static> std::ops::Neg for AFloat<S> {
 
 macro_rules! binary_op {
     ($op:ident, $method:ident) => {
-        impl<S: Float + Send + 'static> std::ops::$op<AFloat<S>> for AFloat<S> {
+        impl<S: Float> std::ops::$op<AFloat<S>> for AFloat<S> {
             type Output = AFloat<S>;
             fn $method(self, rhs: Self) -> Self {
                 Self::from_op(OpCode::$op, self, Some(rhs))
             }
         }
 
-        impl<S: Float + Send + 'static> std::ops::$op<f64> for AFloat<S> {
+        impl<S: Float> std::ops::$op<f64> for AFloat<S> {
             type Output = AFloat<S>;
             fn $method(self, rhs: f64) -> Self {
                 Self::from_op(OpCode::$op, self, Some(NumCast::from(rhs).unwrap()))
             }
         }
 
-        impl<S: Float + Send + 'static> std::ops::$op<AFloat<S>> for f64 {
+        impl<S: Float> std::ops::$op<AFloat<S>> for f64 {
             type Output = AFloat<S>;
             fn $method(self, rhs: AFloat<S>) -> AFloat<S> {
                 AFloat::<S>::from_op(OpCode::$op, NumCast::from(self).unwrap(), Some(rhs))
@@ -169,14 +169,14 @@ binary_op!(Div, div);
 
 macro_rules! assign_op {
     ($op:ident, $method:ident, $optoken:tt) => {
-        impl<S: Float + Send + 'static> std::ops::$op<AFloat<S>> for AFloat<S> {
+        impl<S: Float> std::ops::$op<AFloat<S>> for AFloat<S> {
             fn $method(&mut self, rhs: AFloat<S>) {
                 let result = *self $optoken rhs;
                 *self = result;
             }
         }
 
-        impl<S: Float + Send + 'static> std::ops::$op<f64> for AFloat<S> {
+        impl<S: Float> std::ops::$op<f64> for AFloat<S> {
             fn $method(&mut self, rhs: f64) {
                 let result = *self $optoken rhs;
                 *self = result;
@@ -190,14 +190,14 @@ assign_op!(SubAssign, sub_assign, -);
 assign_op!(MulAssign, mul_assign, *);
 assign_op!(DivAssign, div_assign, /);
 
-impl<S: Float + Send + 'static> std::ops::Rem<AFloat<S>> for AFloat<S> {
+impl<S: Float> std::ops::Rem<AFloat<S>> for AFloat<S> {
     type Output = AFloat<S>;
     fn rem(self, _rhs: Self) -> Self {
         panic!("Operation '%' unsupported on AFloat");
     }
 }
 
-impl<S: Float + Send + 'static> ToPrimitive for AFloat<S> {
+impl<S: Float> ToPrimitive for AFloat<S> {
     fn to_i64(&self) -> Option<i64> {
         self.v.to_i64()
     }
@@ -207,7 +207,7 @@ impl<S: Float + Send + 'static> ToPrimitive for AFloat<S> {
     }
 }
 
-impl<S: Float + Send + 'static> NumCast for AFloat<S> {
+impl<S: Float> NumCast for AFloat<S> {
     fn from<T>(n: T) -> Option<Self>
     where
         T: ToPrimitive,
@@ -216,7 +216,7 @@ impl<S: Float + Send + 'static> NumCast for AFloat<S> {
     }
 }
 
-impl<S: Float + Send + 'static> Zero for AFloat<S> {
+impl<S: Float> Zero for AFloat<S> {
     fn zero() -> Self {
         Self::new(S::zero(), S::zero())
     }
@@ -226,7 +226,7 @@ impl<S: Float + Send + 'static> Zero for AFloat<S> {
     }
 }
 
-impl<S: Float + Send + 'static> One for AFloat<S> {
+impl<S: Float> One for AFloat<S> {
     fn one() -> Self {
         Self::new(S::one(), S::zero())
     }
@@ -236,7 +236,7 @@ impl<S: Float + Send + 'static> One for AFloat<S> {
     }
 }
 
-impl<S: Float + Send + 'static> Num for AFloat<S> {
+impl<S: Float> Num for AFloat<S> {
     type FromStrRadixErr = S::FromStrRadixErr;
 
     fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
@@ -284,7 +284,7 @@ macro_rules! float_elemental2 {
     };
 }
 
-impl<S: Float + Send + 'static> Float for AFloat<S> {
+impl<S: Float> num::Float for AFloat<S> {
     float_constant!(nan);
     float_constant!(infinity);
     float_constant!(neg_infinity);
@@ -396,7 +396,7 @@ mod tests {
     const EPS: f64 = 1e-5;
 
     #[allow(clippy::let_and_return)]
-    fn test_function<S: Float + Send + 'static>(x: S) -> S {
+    fn test_function<S: Float>(x: S) -> S {
         let v1 = x + x - x * x / x;
         let v2 = (v1 + S::from(2.0).unwrap() - S::from(2.0).unwrap()) * S::from(2.0).unwrap()
             / S::from(2.0).unwrap();

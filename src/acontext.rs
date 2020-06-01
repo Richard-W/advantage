@@ -1,5 +1,5 @@
 use super::*;
-use num::{Float, NumCast};
+use num::NumCast;
 use std::any::Any;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -13,7 +13,7 @@ lazy_static! {
 }
 
 #[derive(Debug)]
-struct AContextInner<S: Float + Send + 'static> {
+struct AContextInner<S: Float> {
     cid: usize,
     pub indeps: Vec<usize>,
     pub deps: Vec<usize>,
@@ -21,7 +21,7 @@ struct AContextInner<S: Float + Send + 'static> {
     pub vals: Vec<S>,
 }
 
-impl<S: Float + Send + 'static> AContextInner<S> {
+impl<S: Float> AContextInner<S> {
     /// Construct a raw AContextInner
     fn construct(cid: usize) -> Self {
         AContextInner {
@@ -52,7 +52,7 @@ impl<S: Float + Send + 'static> AContextInner<S> {
     }
 }
 
-impl<S: Float + Send + 'static> Drop for AContextInner<S> {
+impl<S: Float> Drop for AContextInner<S> {
     fn drop(&mut self) {
         let mut ctx_map = CONTEXT_MAP.lock().unwrap();
         ctx_map.remove(&self.cid());
@@ -60,11 +60,11 @@ impl<S: Float + Send + 'static> Drop for AContextInner<S> {
 }
 
 /// Records a function evaluation
-pub struct AContext<S: Float + Send + 'static> {
+pub struct AContext<S: Float> {
     inner: Arc<Mutex<AContextInner<S>>>,
 }
 
-impl<S: Float + Send + 'static> AContext<S> {
+impl<S: Float> AContext<S> {
     /// Create a new AContext
     pub fn new() -> Self {
         AContext {
@@ -181,7 +181,7 @@ impl<S: Float + Send + 'static> AContext<S> {
     }
 }
 
-impl<S: Float + Send + 'static> Default for AContext<S> {
+impl<S: Float> Default for AContext<S> {
     fn default() -> Self {
         Self::new()
     }
