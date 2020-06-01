@@ -166,17 +166,13 @@ impl<S: Float> AContext<S> {
     }
 
     /// Get a tape
-    pub fn tape(&self) -> impl Tape<f64> + Clone {
+    pub fn tape(&self) -> impl Tape<S> + Clone {
         let inner = self.inner.lock().unwrap();
         AContextTape {
             indeps: inner.indeps.clone(),
             deps: inner.deps.clone(),
             ops: inner.ops.clone(),
-            vals: inner
-                .vals
-                .iter()
-                .map(|x| NumCast::from(*x).unwrap())
-                .collect(),
+            vals: inner.vals.clone(),
         }
     }
 }
@@ -188,14 +184,14 @@ impl<S: Float> Default for AContext<S> {
 }
 
 #[derive(Debug, Clone)]
-struct AContextTape {
+struct AContextTape<S: Float> {
     indeps: Vec<usize>,
     deps: Vec<usize>,
     ops: Vec<Operation>,
-    vals: Vec<f64>,
+    vals: Vec<S>,
 }
 
-impl Tape<f64> for AContextTape {
+impl<S: Float> Tape<S> for AContextTape<S> {
     fn indeps(&self) -> &[usize] {
         &self.indeps
     }
@@ -204,11 +200,11 @@ impl Tape<f64> for AContextTape {
         &self.deps
     }
 
-    fn values(&self) -> &[f64] {
+    fn values(&self) -> &[S] {
         &self.vals
     }
 
-    fn values_mut(&mut self) -> &mut [f64] {
+    fn values_mut(&mut self) -> &mut [S] {
         &mut self.vals
     }
 
