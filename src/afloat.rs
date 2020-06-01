@@ -434,4 +434,18 @@ mod tests {
         test_case!(acos, |x: f64| -1.0 / (1.0 - x.powi(2)).sqrt());
         test_case!(atan, |x: f64| 1.0 / (1.0 + x.powi(2)));
     }
+
+    #[test]
+    fn afloat_second_order_derivative() {
+        let x = 1.0_f64;
+        let x = AFloat::new(x, 1.0);
+        let x = AFloat::new(x, 1.0.into());
+
+        let y = x.powi(3);
+
+        assert!((y.value().value() - 1.0).abs() < std::f64::EPSILON);
+        assert!((y.dvalue().value() - 3.0).abs() < std::f64::EPSILON);
+        assert!((y.value().dvalue() - 3.0).abs() < std::f64::EPSILON);
+        assert!((y.dvalue().dvalue() - 6.0).abs() < std::f64::EPSILON);
+    }
 }
