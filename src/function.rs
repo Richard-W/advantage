@@ -21,9 +21,6 @@ pub trait Function<S: Float>: Send + Sync {
 pub trait TapeableFunction<S: Float>: Function<AFloat<S>> {
     /// Create a tape of the function
     fn tape(&self, x: &DVector<S>) -> Box<dyn Tape<S>>;
-
-    /// Evaluate the function with floating point values
-    fn eval_float(&self, x: DVector<S>) -> DVector<S>;
 }
 
 impl<T, S> TapeableFunction<S> for T
@@ -42,11 +39,6 @@ where
             ctx.set_dep(y);
         }
         Box::new(ctx.tape())
-    }
-
-    fn eval_float(&self, x: DVector<S>) -> DVector<S> {
-        let x = x.map(|e| AFloat::<S>::new(e, S::zero()));
-        self.eval(x).map(|e| e.value())
     }
 }
 
@@ -242,7 +234,7 @@ mod tests {
         chain.append(adv_fn_obj!(two_to_one));
 
         let x = DVector::from_element(10, 1.0);
-        let y = chain.eval_float(x);
+        let y = chain.eval(x);
         assert_eq!(y.len(), 1);
         assert!((y[0] - 10.0).abs() < std::f64::EPSILON);
     }
