@@ -1,7 +1,7 @@
 use super::*;
 
 /// Abstraction of a function that can be examined by AD
-pub trait Function: Send + Sync {
+pub trait Function<S: Float>: Send + Sync {
     /// Dimension of argument vector
     fn n(&self) -> usize;
 
@@ -9,21 +9,29 @@ pub trait Function: Send + Sync {
     fn m(&self) -> usize;
 
     /// Evaluate the function
-    fn eval(&self, x: DVector<ADouble>) -> DVector<ADouble>;
-
-    /// Evaluate the function with floating point values
-    fn eval_float(&self, x: DVector<f64>) -> DVector<f64> {
-        let x = x.map(|e| ADouble::new(e, 0.0));
-        self.eval(x).map(|e| e.value())
-    }
+    fn eval(&self, x: DVector<S>) -> DVector<S>;
 
     /// Inner chain structure if it exists
-    fn chain(&self) -> Option<&FunctionChain> {
+    fn chain(&self) -> Option<&FunctionChain<S>> {
         None
     }
+}
 
+/// Function for which a `Tape` can be recorded
+pub trait TapeableFunction<S: Float>: Function<AFloat<S>> {
     /// Create a tape of the function
-    fn tape(&self, x: &DVector<f64>) -> Box<dyn Tape<f64>> {
+    fn tape(&self, x: &DVector<S>) -> Box<dyn Tape<S>>;
+
+    /// Evaluate the function with floating point values
+    fn eval_float(&self, x: DVector<S>) -> DVector<S>;
+}
+
+impl<T, S> TapeableFunction<S> for T
+where
+    T: Function<AFloat<S>> + ?Sized,
+    S: Float,
+{
+    fn tape(&self, x: &DVector<S>) -> Box<dyn Tape<S>> {
         let mut ctx = AContext::new();
         let mut input = x.map(|x| x.into());
         for x in input.iter_mut() {
@@ -35,31 +43,45 @@ pub trait Function: Send + Sync {
         }
         Box::new(ctx.tape())
     }
+
+    fn eval_float(&self, x: DVector<S>) -> DVector<S> {
+        let x = x.map(|e| AFloat::<S>::new(e, S::zero()));
+        self.eval(x).map(|e| e.value())
+    }
 }
 
 #[derive(Clone)]
 #[doc(hidden)]
-pub struct SimpleFunction<F>
+pub struct SimpleFunction<F, S>
 where
-    F: Fn(DVector<ADouble>) -> DVector<ADouble> + Send + Sync + 'static,
+    F: Fn(DVector<S>) -> DVector<S> + Send + Sync + 'static,
+    S: Float,
 {
     n: usize,
     m: usize,
     f: F,
+    _pd: std::marker::PhantomData<S>,
 }
 
-impl<F> SimpleFunction<F>
+impl<F, S> SimpleFunction<F, S>
 where
-    F: Fn(DVector<ADouble>) -> DVector<ADouble> + Send + Sync + 'static,
+    F: Fn(DVector<S>) -> DVector<S> + Send + Sync + 'static,
+    S: Float,
 {
     pub fn new(n: usize, m: usize, f: F) -> Self {
-        Self { n, m, f }
+        Self {
+            n,
+            m,
+            f,
+            _pd: std::marker::PhantomData,
+        }
     }
 }
 
-impl<F> Function for SimpleFunction<F>
+impl<F, S> Function<S> for SimpleFunction<F, S>
 where
-    F: Fn(DVector<ADouble>) -> DVector<ADouble> + Send + Sync + 'static,
+    F: Fn(DVector<S>) -> DVector<S> + Send + Sync + 'static,
+    S: Float,
 {
     fn n(&self) -> usize {
         self.n
@@ -69,40 +91,40 @@ where
         self.m
     }
 
-    fn eval(&self, x: DVector<ADouble>) -> DVector<ADouble> {
+    fn eval(&self, x: DVector<S>) -> DVector<S> {
         (self.f)(x)
     }
 }
 
 /// A chain of function where each node takes its input from its predecessor
-pub struct FunctionChain {
-    funcs: Vec<Box<dyn Function>>,
+pub struct FunctionChain<S: Float> {
+    funcs: Vec<Box<dyn Function<S>>>,
 }
 
 #[allow(clippy::len_without_is_empty)]
-impl FunctionChain {
-    pub fn from_boxed(f: Box<dyn Function>) -> Self {
+impl<S: Float> FunctionChain<S> {
+    pub fn from_boxed(f: Box<dyn Function<S>>) -> Self {
         let mut this = Self { funcs: Vec::new() };
         this.funcs.push(f);
         this
     }
 
-    pub fn new<F: Function + 'static>(f: F) -> Self {
+    pub fn new<F: Function<S> + 'static>(f: F) -> Self {
         Self::from_boxed(Box::new(f))
     }
 
-    pub fn append<F: Function + 'static>(&mut self, f: F) {
+    pub fn append<F: Function<S> + 'static>(&mut self, f: F) {
         self.append_boxed(Box::new(f));
     }
 
-    pub fn append_boxed(&mut self, f: Box<dyn Function>) {
+    pub fn append_boxed(&mut self, f: Box<dyn Function<S>>) {
         assert_eq!(self.funcs.last().unwrap().m(), f.n());
         self.funcs.push(f);
     }
 
-    pub fn iter(&self) -> impl std::iter::Iterator<Item = &dyn Function> {
+    pub fn iter(&self) -> impl std::iter::Iterator<Item = &dyn Function<S>> {
         self.funcs.iter().flat_map(|f| {
-            let iter: Box<dyn std::iter::Iterator<Item = &dyn Function>> = match f.chain() {
+            let iter: Box<dyn std::iter::Iterator<Item = &dyn Function<S>>> = match f.chain() {
                 Some(chain) => Box::new(chain.iter()),
                 None => Box::new(std::iter::once(&**f)),
             };
@@ -114,12 +136,12 @@ impl FunctionChain {
         self.iter().count()
     }
 
-    pub fn nth(&self, idx: usize) -> &dyn Function {
+    pub fn nth(&self, idx: usize) -> &dyn Function<S> {
         self.iter().nth(idx).unwrap()
     }
 }
 
-impl Function for FunctionChain {
+impl<S: Float> Function<S> for FunctionChain<S> {
     fn n(&self) -> usize {
         self.funcs.first().unwrap().n()
     }
@@ -128,11 +150,11 @@ impl Function for FunctionChain {
         self.funcs.last().unwrap().m()
     }
 
-    fn chain(&self) -> Option<&FunctionChain> {
+    fn chain(&self) -> Option<&FunctionChain<S>> {
         Some(self)
     }
 
-    fn eval(&self, x: DVector<ADouble>) -> DVector<ADouble> {
+    fn eval(&self, x: DVector<S>) -> DVector<S> {
         let mut current = x;
         for func in self.funcs.iter() {
             current = func.eval(current);
@@ -172,7 +194,7 @@ mod tests {
 
     adv_fn! {
         fn ten_to_five(x: [[10]]) -> [[5]] {
-            let mut result = DVector::<Scalar>::zeros(5);
+            let mut result = DVector::zeros(5);
             for i in 0..5 {
                 result[i] = x[2*i] + x[2*i+1];
             }
@@ -182,7 +204,7 @@ mod tests {
 
     adv_fn! {
         fn five_to_two(x: [[5]]) -> [[2]] {
-            let mut result = DVector::<Scalar>::zeros(2);
+            let mut result = DVector::zeros(2);
             result[0] = x[0] + x[1] + x[2];
             result[1] = x[3] + x[4];
             result
@@ -191,7 +213,7 @@ mod tests {
 
     adv_fn! {
         fn two_to_one(x: [[2]]) -> [[1]] {
-            let mut result = DVector::<Scalar>::zeros(1);
+            let mut result = DVector::zeros(1);
             result[0] = x[0] + x[1];
             result
         }

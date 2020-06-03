@@ -25,7 +25,7 @@ fn bit_iter<'a>(bytes: &'a [u8]) -> impl Iterator<Item = bool> + 'a {
 
 /// Derive the Generalized Jacobian of a function
 pub fn generalized_jacobian(
-    func: &dyn Function,
+    func: &dyn Function<ADouble>,
     x: &DVector<f64>,
     dx: &DVector<f64>,
     sign_bits: &[u8],
@@ -147,7 +147,7 @@ pub fn generalized_jacobian_tape(
 
 /// Derive the Generalized Jacobian of a chain of functions
 pub fn generalized_jacobian_chain(
-    chain: &FunctionChain,
+    chain: &FunctionChain<ADouble>,
     x: DVector<f64>,
     dx: DVector<f64>,
     ncheckpoints: Option<usize>,

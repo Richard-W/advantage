@@ -294,7 +294,7 @@ pub struct AbsNormalForm {
 
 /// Derive a dense Abs-Normal form from a function
 #[allow(clippy::many_single_char_names)]
-pub fn abs_normal(func: &dyn Function, x: &DVector<f64>) -> AbsNormalForm {
+pub fn abs_normal(func: &dyn Function<ADouble>, x: &DVector<f64>) -> AbsNormalForm {
     let tape = func.tape(x);
     let abs_tape = AbsNormalTape::new(tape);
     let n = abs_tape.n();

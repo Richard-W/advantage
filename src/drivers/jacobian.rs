@@ -3,7 +3,7 @@ use rayon::prelude::*;
 
 /// Create a jacobian using forward-mode automatic differentiation
 #[allow(clippy::many_single_char_names)]
-pub fn jacobian_forward(func: &dyn Function, x: &DVector<f64>) -> DMatrix<f64> {
+pub fn jacobian_forward(func: &dyn Function<ADouble>, x: &DVector<f64>) -> DMatrix<f64> {
     let n = func.n();
     let m = func.m();
     assert_eq!(x.nrows(), func.n());

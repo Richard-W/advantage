@@ -50,9 +50,9 @@ macro_rules! adv_fn {
         }
     } => {
         $(#[$attr])*
-        $vis fn $func_name<Scalar: 'static> ( $arg_name: $crate::DVector<Scalar> $(, $extra_arg : $extra_type )* ) -> $crate::DVector<Scalar>
+        $vis fn $func_name<Scalar> ( $arg_name: $crate::DVector<Scalar> $(, $extra_arg : $extra_type )* ) -> $crate::DVector<Scalar>
         where
-            Scalar: core::fmt::Debug + $crate::Scalar<f64>,
+            Scalar: $crate::Float + From<f64> + $crate::Arithmetic<f64, Scalar> + $crate::ArithmeticAssign<f64>,
             f64: $crate::Arithmetic<Scalar, Scalar>,
         {
             assert_eq!($arg_name.nrows(), $($arg_dim)*);
@@ -67,7 +67,11 @@ macro_rules! adv_fn {
         // visible
         $crate::paste::item! {
             #[doc(hidden)]
-            $vis fn [< __adv_ $func_name >]($( $extra_arg : $extra_type ,)*) -> impl $crate::Function {
+            $vis fn [< __adv_ $func_name >]<Scalar>($( $extra_arg : $extra_type ,)*) -> impl $crate::Function<Scalar>
+            where
+                Scalar: $crate::Float + From<f64> + $crate::Arithmetic<f64, Scalar> + $crate::ArithmeticAssign<f64>,
+                f64: $crate::Arithmetic<Scalar, Scalar>,
+            {
                 $crate::SimpleFunction::new( $($arg_dim)*, $($result_dim)*, move |input| {
                     $func_name(input $(, $extra_arg.clone() )*)
                 })
