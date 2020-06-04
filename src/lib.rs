@@ -34,9 +34,6 @@ pub use function::*;
 mod operation;
 pub use operation::*;
 
-mod scalar;
-pub use scalar::*;
-
 mod tape;
 pub use tape::*;
 
