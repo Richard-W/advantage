@@ -61,15 +61,14 @@ pub trait Tape: Send + Sync + fmt::Debug {
     /// Re-evaluate function from stored evaluation procedure
     fn zero_order(&mut self, x: &DVector<f64>) {
         assert_eq!(x.nrows(), self.num_indeps());
-        let indeps = self.indeps().to_vec();
-        let ops = self.ops_iter().collect::<Vec<_>>();
-        let values = self.values_mut();
-        for (idx, vid) in indeps.into_iter().enumerate() {
-            values[vid] = x[idx];
+        let mut values = self.values().to_vec();
+        for (idx, vid) in self.indeps().iter().enumerate() {
+            values[*vid] = x[idx];
         }
-        for op in ops.into_iter() {
-            op.zero_order(values);
+        for op in self.ops_iter() {
+            op.zero_order(&mut values);
         }
+        self.values_mut().copy_from_slice(&values);
     }
 
     /// Calculate adjoint of Jacobian
