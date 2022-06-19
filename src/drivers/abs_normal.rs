@@ -172,13 +172,10 @@ macro_rules! anf_matrix {
                         }
                         vec![(j, result)]
                     })
-                    .reduce(
-                        Vec::new,
-                        |mut a, mut b| {
-                            a.append(&mut b);
-                            a
-                        },
-                    );
+                    .reduce(Vec::new, |mut a, mut b| {
+                        a.append(&mut b);
+                        a
+                    });
                 let mut result = DMatrix::zeros(self.nrows(), rhs.ncols());
                 for (j, col) in cols.iter() {
                     result.column_mut(*j).copy_from(col);
@@ -205,13 +202,10 @@ macro_rules! anf_matrix {
                         }
                         vec![(i, result)]
                     })
-                    .reduce(
-                        Vec::new,
-                        |mut a, mut b| {
-                            a.append(&mut b);
-                            a
-                        },
-                    );
+                    .reduce(Vec::new, |mut a, mut b| {
+                        a.append(&mut b);
+                        a
+                    });
                 let mut result = DMatrix::zeros(lhs.nrows(), self.ncols());
                 for (i, row) in rows.iter() {
                     result.row_mut(*i).copy_from(row);
