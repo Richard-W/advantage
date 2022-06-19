@@ -8,7 +8,7 @@ pub struct GeneralizedJacobian {
     pub multiplicity: usize,
 }
 
-fn bit_iter<'a>(bytes: &'a [u8]) -> impl Iterator<Item = bool> + 'a {
+fn bit_iter(bytes: &[u8]) -> impl Iterator<Item = bool> + '_ {
     let mut idx = 0;
     std::iter::from_fn(move || {
         let byte_idx = idx / 8;
@@ -64,7 +64,7 @@ pub fn generalized_jacobian_tape(
     let b = -y_tape.mul_right(&z_abs);
 
     // Calculate Δz
-    let dzt = &a + z_tape.mul_right(&dx);
+    let dzt = &a + z_tape.mul_right(dx);
     let mut dz = dzt.clone();
     for _ in 0..s {
         let dz_ = dz.clone();
@@ -194,23 +194,23 @@ mod tests {
         let bits = vec![0b1000_0011, 0b1100_0111];
         let mut iter = bit_iter(&bits);
 
-        assert_eq!(iter.next().unwrap(), true);
-        assert_eq!(iter.next().unwrap(), true);
-        assert_eq!(iter.next().unwrap(), false);
-        assert_eq!(iter.next().unwrap(), false);
-        assert_eq!(iter.next().unwrap(), false);
-        assert_eq!(iter.next().unwrap(), false);
-        assert_eq!(iter.next().unwrap(), false);
-        assert_eq!(iter.next().unwrap(), true);
+        assert!(iter.next().unwrap());
+        assert!(iter.next().unwrap());
+        assert!(!iter.next().unwrap());
+        assert!(!iter.next().unwrap());
+        assert!(!iter.next().unwrap());
+        assert!(!iter.next().unwrap());
+        assert!(!iter.next().unwrap());
+        assert!(iter.next().unwrap());
 
-        assert_eq!(iter.next().unwrap(), true);
-        assert_eq!(iter.next().unwrap(), true);
-        assert_eq!(iter.next().unwrap(), true);
-        assert_eq!(iter.next().unwrap(), false);
-        assert_eq!(iter.next().unwrap(), false);
-        assert_eq!(iter.next().unwrap(), false);
-        assert_eq!(iter.next().unwrap(), true);
-        assert_eq!(iter.next().unwrap(), true);
+        assert!(iter.next().unwrap());
+        assert!(iter.next().unwrap());
+        assert!(iter.next().unwrap());
+        assert!(!iter.next().unwrap());
+        assert!(!iter.next().unwrap());
+        assert!(!iter.next().unwrap());
+        assert!(iter.next().unwrap());
+        assert!(iter.next().unwrap());
     }
 
     #[test]
