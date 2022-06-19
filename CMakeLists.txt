@@ -63,10 +63,10 @@ target_compile_definitions(advantage_cxx PRIVATE
 	_IN_ADV
 )
 if (WIN32)
-	# FIXME: These symbols should not be needed here
 	target_link_libraries(advantage_cxx PRIVATE
 		ws2_32
 		userenv
+		Bcrypt
 	)
 endif ()
 
